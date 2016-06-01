@@ -86,6 +86,7 @@ def start_task():
         for i in range(g_worker_num):
             d =dict()
             d['cmd']='exit'
+            task_q.put(d)
 
         #Wait workers exit                       
         time.sleep(10)
