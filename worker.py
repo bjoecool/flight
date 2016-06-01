@@ -176,7 +176,7 @@ def check_worker_status(worker_list, total_task_num):
         time.sleep(300)  #Every 5min to check workers status once
 
 def monitor_exec(worker_list,stat_q):
-    process_name='monitor_exec'
+    process_name='[monitor_exec]'
     
     print("Enter into %s" %process_name)
     if len(worker_list) == 0:
@@ -187,7 +187,7 @@ def monitor_exec(worker_list,stat_q):
     while(1):
         for wk in worker_list:
             if wk.no_heartbeat_times>3:
-                logging.info("[%process_name] woker[%d] no_heartbeat_times reach to max value 3, restart it" %process_name)
+                logging.info("%s woker[%d] no_heartbeat_times reach to max value 3, restart it" %process_name)
                 wk.terminate()
                 wk.start()            
         
@@ -202,7 +202,7 @@ def monitor_exec(worker_list,stat_q):
         for wk in worker_list:
             if wk.num == num:
                 wk.no_heartbeat_times=0
-                logging.info("[%process_name] Received heartbeat from worker[%d]" %(process_name,num))
+                logging.info("%s Received heartbeat from worker[%d]" %(process_name,num))
         
                 
 def test(url,id):

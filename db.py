@@ -167,6 +167,7 @@ class FlightPlanDatabase():
         cur.close()
 
     def update_flight_price_query_task(self):
+        pass
             
     def create_today_task(self):
         """
