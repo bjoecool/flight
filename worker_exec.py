@@ -102,7 +102,26 @@ def execTask(task_q,result_q, stat_q,num):
     closeDriver(driver)
     logging.info(name+" exited")
 
+def get_flight_info_from_flight_module_element(flight_module_element):
+    """
+    return a tuple cotains:
+    1. flight_price as string
+    2. flight_company as string
+    """
+    price_element_class_name='price-column'
+#     flight_company_class_name=''
+    
+    price_element = flight_module_element.find_element_by_css_selector('.flight-module.offer-listing.price-column.offer-price.dollars')
+    price = price_element.text()
+    
+    company_element = flight_module_element.find_element_by_css_selector('.flight-module.offer-listing.flex-card.flex-area-primary.primary-block.secondary')
+    company_name = company_element.text()
+    
+    return price,company_name
+    
 def getFlightPrice(driver, url, id, worker_num):
+    
+    flight_module_class_name='flight-module.segment.offer-listing'
         
     flight_id=str(id)
     
@@ -123,6 +142,23 @@ def getFlightPrice(driver, url, id, worker_num):
         time.sleep(1)
         body_element = driver.find_element_by_tag_name('body')
         re.writeN(body_element.text)
+        
+#         flight_module_element_list = driver.find_elements_by_css_selector('.flight-module.offer-listing')
+        
+        price_element = driver.find_element_by_css_selector('.flight-module.offer-listing.price-column.offer-price')
+        p = price_element.text()
+        
+        company_element = driver.find_element_by_css_selector('.flight-module.offer-listing.flex-card.flex-area-primary.primary-block.secondary')
+        c = company_element.text()
+        
+        print("p = %s, c= %s" %(p,c))
+#         
+#         for flight_module_element in flight_module_element_list:
+#             print(flight_module_element)
+#             price,company = get_flight_info_from_flight_module_element(flight_module_element)
+#             print('price is %s' %price)
+#             break
+
 
         time.sleep(1)
         re.finish()
@@ -144,17 +180,17 @@ def test():
         tx = t2-t1
         print("Total cost time for url1 is %d seconds" %tx.seconds)
         
-        t1 = datetime.datetime.now()
-        getFlightPrice(d,url2,2,1)
-        t2 = datetime.datetime.now()
-        tx = t2-t1
-        print("Total cost time for url2 is %d seconds" %tx.seconds)
-         
-        t1 = datetime.datetime.now()
-        getFlightPrice(d,url3,3,1)
-        t2 = datetime.datetime.now()
-        tx = t2-t1
-        print("Total cost time for url3 is %d seconds" %tx.seconds)
+#         t1 = datetime.datetime.now()
+#         getFlightPrice(d,url2,2,1)
+#         t2 = datetime.datetime.now()
+#         tx = t2-t1
+#         print("Total cost time for url2 is %d seconds" %tx.seconds)
+#          
+#         t1 = datetime.datetime.now()
+#         getFlightPrice(d,url3,3,1)
+#         t2 = datetime.datetime.now()
+#         tx = t2-t1
+#         print("Total cost time for url3 is %d seconds" %tx.seconds)
     
     finally:    
         closeDriver(d)
