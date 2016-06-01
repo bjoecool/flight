@@ -259,8 +259,8 @@ class FlightPlanDatabase():
         cur.execute('''update flight_price_query_task set status=%s 
                     where flight_id=%s and execute_date=%s;''',
                     (status,flight_id,search_date))
-        print("update flight_price_query_task set status=%s where flight_id=%s and execute_date=%s;"
-              %(status,flight_id,search_date))
+#         print("update flight_price_query_task set status=%s where flight_id=%s and execute_date=%s;"
+#               %(status,flight_id,search_date))
         self.conn.commit()
         cur.close()
         

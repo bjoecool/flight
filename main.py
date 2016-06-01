@@ -13,7 +13,7 @@ import multiprocessing as mp
 
 import worker
 
-g_worker_num = 4
+g_worker_num = 1
 
 process_name='[main]'
 
@@ -40,6 +40,7 @@ def start_task():
     wkm = worker.WorkerMonitor()
     
     task_q,result_q = wkm.create_queue()
+    
     try:
         while 1:
             flight_list = mydb.get_today_task_id(max_task_num)
@@ -56,11 +57,13 @@ def start_task():
             print("Starting worker monitor")
             wkm.start_monitor()
                         
+            t1 = datetime.datetime.now()
             #Put task list
             for flight_id in flight_list:
                 d = dict()
                 d['cmd']='continue'
                 d['data'] = flight_id
+                d['date'] = t1.strftime('%Y-%m-%d')
                 task_q.put(d)
                 i +=1
     
@@ -84,7 +87,7 @@ def start_task():
 
         #Send EXIT command to workers
         for i in range(g_worker_num):
-            d =dict()
+            d = dict()
             d['cmd']='exit'
             task_q.put(d)
 
@@ -93,8 +96,7 @@ def start_task():
                         
         wkm.stop_monitor()
         wkm.stop_workers()
-   
-    mydb.disconnectDB()
+        mydb.disconnectDB()
 
 def wait_tasks_finished(result_q, total_task_num):
     task_num = 0

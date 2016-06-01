@@ -294,7 +294,7 @@ def get_one_flight_info(origin_flight_list):
     pass
 
 def get_block_info(lines):
-
+    pass
             
         
 def analyze_one_file(filename):
@@ -332,18 +332,15 @@ def analyze_one_file(filename):
                     line=line[0:-1]
                 search_date=line[len("<search_date>"):]
         
-        for line in f.readlines():
-            if line.find('Result ')==1:
-                
         # Now get the flight list
-        result_list = get_result_list(f.readlines())
+#         result_list = get_result_list(f.readlines())
         
-        try:
-            for result in result_list:
-                flight_info = get_one_flight_info(result)
-                flight_list.append(flight_info)
-        except Exception as err:
-            print("Error happened : ", str(err))
+#         try:
+#             for result in result_list:
+#                 flight_info = get_one_flight_info(result)
+#                 flight_list.append(flight_info)
+#         except Exception as err:
+#             print("Error happened : ", str(err))
 
     return flight_id,search_date,flight_list
 

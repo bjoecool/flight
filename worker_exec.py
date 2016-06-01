@@ -31,16 +31,18 @@ proxy = Proxy({
     })
 
 def createDriver():
-    driver = webdriver.Firefox(proxy=proxy)
+#    driver = webdriver.Firefox(proxy=proxy)
     
-#     driver = webdriver.Firefox()
+    driver = webdriver.Firefox()
     return driver
 
 def closeDriver(driver):
-    driver.close()
+#     driver.close()
+    driver.quit()
     
 def runDriver(driver,url,id):
     t1 = datetime.datetime.now()
+    print(url)
     driver.get(url)
     ret = True
     t2 = datetime.datetime.now()
@@ -48,6 +50,7 @@ def runDriver(driver,url,id):
     logging.info("driver.get cost %d seconds for id[%d]" %(tx.seconds,id))
     try:
         t1 = datetime.datetime.now()
+        time.sleep(15)
         element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "feedbackAndImprovements")))
         t2 = datetime.datetime.now()
         tx = t2-t1
@@ -55,6 +58,8 @@ def runDriver(driver,url,id):
     except TimeoutException as tterr:
         logging.info("Time out for get URL[%d]" %(id))
         ret = False
+    except Exception as err:
+        print("error ",err)
     finally:
         return ret
 
@@ -69,38 +74,41 @@ def execTask(task_q,result_q, stat_q,num):
     
     driver = createDriver()
     
-    while(1):
-        if task_q.empty() == True:
-            time.sleep(10)
-            continue
-        d = task_q.get()
-        
-        if d['cmd']=='exit':
-            break
-        
-        t1 = datetime.datetime.now()
-        flight_id = d['data']
-        print("%s Start handle task with flight id %d" %(name,flight_id))
-        logging.info("%s Start handle task with flight id %d" %(name,flight_id))
-        
-        result_q.put(flight_id)
-        
-        flight = mydb.get_flight_by_id(flight_id)
-        
-        url_creater=url.ExpediaReqURL()
-        req_url = url_creater.createURL(**flight)
-        logging.info("%s send url : %s\n" %(name,req_url))
-        getFlightPrice(driver, req_url,flight_id, num)
-        t2 = datetime.datetime.now()
-        tx = t2-t1
-        logging.info("%s End handle task flight id %d with time [%s] seconds" %(name,flight_id, tx.seconds))
-        print("%s End handle task flight id %d with time [%s] seconds" %(name,flight_id, tx.seconds))
-        
-        # Put the worker number into the stat queue
-        stat_q.put(num)
-        
-    closeDriver(driver)
-    logging.info(name+" exited")
+    try:
+        while(1):
+            if task_q.empty() == True:
+                time.sleep(10)
+                continue
+            d = task_q.get()
+            
+            if d['cmd']=='exit':
+                break
+            
+            t1 = datetime.datetime.now()
+            flight_id = d['data']
+            search_date=d['date']
+            print("%s Start handle task with flight id %d" %(name,flight_id))
+            logging.info("%s Start handle task with flight id %d" %(name,flight_id))
+            
+            result_q.put(flight_id)
+            
+            flight = mydb.get_flight_by_id(flight_id)
+            mydb.update_status_in_flight_price_query_task_tbl(flight_id,1,search_date)
+            
+            url_creater=url.ExpediaReqURL()
+            req_url = url_creater.createURL(**flight)
+            logging.info("%s send url : %s\n" %(name,req_url))
+            getFlightPrice(driver, req_url,flight_id, num)
+            t2 = datetime.datetime.now()
+            tx = t2-t1
+            logging.info("%s End handle task flight id %d with time [%s] seconds" %(name,flight_id, tx.seconds))
+            print("%s End handle task flight id %d with time [%s] seconds" %(name,flight_id, tx.seconds))
+            
+            # Put the worker number into the stat queue
+            stat_q.put(num)
+    finally:
+        closeDriver(driver)
+        logging.info(name+" exited")
 
 def get_flight_info_from_flight_module_element(flight_module_element):
     """
@@ -145,13 +153,13 @@ def getFlightPrice(driver, url, id, worker_num):
         
 #         flight_module_element_list = driver.find_elements_by_css_selector('.flight-module.offer-listing')
         
-        price_element = driver.find_element_by_css_selector('.flight-module.offer-listing.price-column.offer-price')
-        p = price_element.text()
+#         price_element = driver.find_element_by_css_selector('.flight-module.offer-listing.price-column.offer-price')
+#         p = price_element.text()
+#         
+#         company_element = driver.find_element_by_css_selector('.flight-module.offer-listing.flex-card.flex-area-primary.primary-block.secondary')
+#         c = company_element.text()
         
-        company_element = driver.find_element_by_css_selector('.flight-module.offer-listing.flex-card.flex-area-primary.primary-block.secondary')
-        c = company_element.text()
-        
-        print("p = %s, c= %s" %(p,c))
+#         print("p = %s, c= %s" %(p,c))
 #         
 #         for flight_module_element in flight_module_element_list:
 #             print(flight_module_element)
