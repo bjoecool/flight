@@ -9,11 +9,10 @@ import logging
 import db
 from enum import Enum
 
-class ParserStat(Enum):
+class BlockParserStat(Enum):
     not_start = 0
     start_block = 1  #find Result
     in_block = 2 #find content but not Result when in start_block or in_block state
-    end_block = 3 #find another Result when in in_block state or start_block state
 
 class Result():
     def __init__(self, dir="results"):
@@ -225,7 +224,7 @@ def analyze_results(dir):
     """
     pass
 
-def get_result_list(lines):
+def get_block_list(lines):
     """
     Read the lines and return the result_list.
     Every result in the result_list is a list contains following information:
@@ -247,6 +246,27 @@ def get_result_list(lines):
         Show Flight Details for result 5
         Good Flight (7.1 out of 10)
     """
+    fsm_state = BlockParserStat.not_start
+    block_list = []
+    for line in lines:
+        if line.find('Result ')==0:
+            if fsm_state == BlockParserStat.not_start:
+                fsm_state = BlockParserStat.start_block
+                block_info = []
+                block_info.append(line)
+            elif fsm_state == BlockParserStat.start_block:
+                pass
+            elif fsm_state == BlockParserStat.in_block:
+                fsm_state = BlockParserStat.start_block
+                block_list.append(block_info)
+        else:
+            if fsm_state == BlockParserStat.not_start:
+                pass
+            elif fsm_state == BlockParserStat.start_block:
+                block_info.append(line)
+            elif fsm_state == BlockParserStat.in_block:
+                block_info.append(line)
+                
 def get_one_flight_info(origin_flight_list):
     """
     Input is a list contains the flight inforation as following:
@@ -273,6 +293,10 @@ def get_one_flight_info(origin_flight_list):
     """
     pass
 
+def get_block_info(lines):
+
+            
+        
 def analyze_one_file(filename):
     """
     Analyze one result file and return the result as a tuple
