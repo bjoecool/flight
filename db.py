@@ -179,6 +179,7 @@ class FlightPlanDatabase():
         try:
             cur.execute('''DELETE FROM flight_price_query_task where execute_date<=current_date;''')
             cur.execute('''insert into flight_price_query_task select id,0,current_date from flight where start_date>current_date;''')
+            cur.commit()
             cur.execute('''SELECT count(*) from flight_price_query_task where execute_date=current_date;''')
             col = cur.fetchone()
             total_task_num = col[0]

@@ -138,9 +138,6 @@ def getFlightPrice(driver, url, id, worker_num):
     re = Recorder(flight_id,recorder.RecorderMode.binary)
     
     if runDriver(driver,url,id)==True:
-        t = driver.title
-        print(t)
-        
         flight_id="<flight_id>"+flight_id
         re.writeN(flight_id)
         re.write("<url>")
