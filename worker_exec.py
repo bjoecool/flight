@@ -31,9 +31,9 @@ proxy = Proxy({
     })
 
 def createDriver():
-    driver = webdriver.Firefox(proxy=proxy)
+#     driver = webdriver.Firefox(proxy=proxy)
     
-#     driver = webdriver.Firefox()
+    driver = webdriver.Firefox()
     return driver
 
 def closeDriver(driver):
@@ -103,14 +103,14 @@ def execTask(task_q,result_q, stat_q,num):
             
             t2 = datetime.datetime.now()
             tx = t2-t1
-            logging.info("%s End handle task flight id %d with time [%s] seconds" %(name,flight_id, tx.seconds))
-            print("%s End handle task flight id %d with time [%s] seconds" %(name,flight_id, tx.seconds))
+            logging.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
+            print("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             
             # Put the worker number into the stat queue
             stat_q.put(num)
     finally:
         closeDriver(driver)
-        logging.info(name+" exited")
+        logging.info(worker_name+" exited")
 
 def get_flight_info_from_flight_module_element(flight_module_element):
     """

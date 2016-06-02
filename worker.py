@@ -182,12 +182,12 @@ def monitor_exec(worker_list,stat_q):
     if len(worker_list) == 0:
         return;
     
-    
+    max_heartbeat_times = 3
 
     while(1):
         for wk in worker_list:
-            if wk.no_heartbeat_times>3:
-                logging.info("%s woker[%d] no_heartbeat_times reach to max value 3, restart it" %process_name)
+            if wk.no_heartbeat_times>max_heartbeat_times:
+                logging.info("%s woker[%d] no_heartbeat_times reach to max value %d, restart it" %(process_name,wk.num,max_heartbeat_times))
                 wk.terminate()
                 wk.start()            
         
