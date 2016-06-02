@@ -7,6 +7,7 @@ import time
 import datetime
 import logging
 import db
+import re
 from enum import Enum
 
 class BlockParserStat(Enum):
@@ -210,7 +211,24 @@ def test2(top):
         for f in new_files:
             print("   %s" %os.path.join(root,f))
 
-
+def test4():
+#     with open('results/res_20160602_168183.txt','rb') as f:
+#         block_list = get_block_list(f.readlines())
+#         print("len = %d" %len(block_list))
+#         for block in block_list:
+#             print(block)
+#             f = parse_block_info(block)
+#             print(f)
+#             print('\n')
+            
+    flight_tup = analyze_one_file('results/res_20160602_168183.txt')
+    if flight_tup != None:
+        for e in flight_tup:
+            if type(e)==type([]):
+                for x in e:
+                    print(x)
+            else:
+                print(e)
 
 def get_all_files(dir):
     """
@@ -249,7 +267,8 @@ def get_block_list(lines):
     fsm_state = BlockParserStat.not_start
     block_list = []
     for line in lines:
-        if line.find('Result ')==0:
+        if line.find(b'Result ')==0:
+#             print(line)
             if fsm_state == BlockParserStat.not_start:
                 fsm_state = BlockParserStat.start_block
                 block_info = []
@@ -259,17 +278,22 @@ def get_block_list(lines):
             elif fsm_state == BlockParserStat.in_block:
                 fsm_state = BlockParserStat.start_block
                 block_list.append(block_info)
+                block_info = []
+                block_info.append(line)
         else:
             if fsm_state == BlockParserStat.not_start:
                 pass
             elif fsm_state == BlockParserStat.start_block:
+                fsm_state = BlockParserStat.in_block
                 block_info.append(line)
             elif fsm_state == BlockParserStat.in_block:
                 block_info.append(line)
-                
-def get_one_flight_info(origin_flight_list):
+
+    return block_list
+
+def parse_block_info(block_info):
     """
-    Input is a list contains the flight inforation as following:
+    Input is a block_info with list type contains the flight inforation as following:
         Result 5, $636.77
         Departure
         10:05am - 9:35pm
@@ -291,11 +315,34 @@ def get_one_flight_info(origin_flight_list):
     flight_info['price']  as a string
     flight_info['company'] as a string
     """
-    pass
-
-def get_block_info(lines):
-    pass
-            
+    flight_info = None
+    
+    line_1 = block_info[0]
+    
+    if line_1.find(b'Result ')==0:
+        price = line_1.split(b',',maxsplit=1)[1]
+        price = price.strip()
+        price = price.replace(b'$',b'').replace(b',',b'')
+        if price != None:
+            flight_info=dict()
+            flight_info['price']=price.decode()
+        else:
+            return flight_info
+    
+    i = 0
+    for line in block_info:
+        s = line
+        if re.search(b'.*m - .*m$',s)!=None:
+            company_name = block_info[i+1].strip()
+            flight_info['company'] = company_name.decode()
+            break
+        elif re.search(b'.*m - .*m +.*$',s)!=None:
+            company_name = block_info[i+2].strip()
+            flight_info['company'] = company_name.decode()
+            break
+        i = i+1
+    
+    return flight_info
         
 def analyze_one_file(filename):
     """
@@ -312,41 +359,40 @@ def analyze_one_file(filename):
     search_date="None"
     flight_list=[]
 
-    with open(filename) as f:
+    with open(filename,'rb') as f:
         # get flight_id
-        line = f.readline()
+        line = f.readline().strip()
         if len(line)>0:
-            if line.find("<flight_id>") != -1:
-                if line[-1] == '\n':
+            if line.find(b"<flight_id>") != -1:
+                if line[-1] == b'\n':
                     line=line[0:-1]
-                flight_id=line[len("<flight_id>"):]
+                flight_id=line[len("<flight_id>"):].decode()
                 
         # get the url
         line = f.readline()
         
         # get search_date
-        line = f.readline()
+        line = f.readline().strip()
         if len(line)>0:
-            if line.find("<search_date>") != -1:
-                if line[-1] == '\n':
+            if line.find(b"<search_date>") != -1:
+                if line[-1] == b'\n':
                     line=line[0:-1]
-                search_date=line[len("<search_date>"):]
+                search_date=line[len(b"<search_date>"):].decode()
         
         # Now get the flight list
-#         result_list = get_result_list(f.readlines())
+        block_list = get_block_list(f.readlines())
         
-#         try:
-#             for result in result_list:
-#                 flight_info = get_one_flight_info(result)
-#                 flight_list.append(flight_info)
-#         except Exception as err:
-#             print("Error happened : ", str(err))
-
+        for block in block_list:
+            flight_info = parse_block_info(block)
+            if flight_info != None:
+                flight_list.append(flight_info)
+        
     return flight_id,search_date,flight_list
 
 def main():
 #     readResults()
-    test3('results')
+#     test3('results')
+    test4()
     
 if __name__=='__main__':
     main()

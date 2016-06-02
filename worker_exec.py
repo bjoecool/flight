@@ -18,7 +18,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from recorder import Recorder
 
-
+worker_name=["worker_0"]
 
 myProxy = "127.0.0.1:3128"
 
@@ -31,9 +31,9 @@ proxy = Proxy({
     })
 
 def createDriver():
-#    driver = webdriver.Firefox(proxy=proxy)
+    driver = webdriver.Firefox(proxy=proxy)
     
-    driver = webdriver.Firefox()
+#     driver = webdriver.Firefox()
     return driver
 
 def closeDriver(driver):
@@ -42,21 +42,20 @@ def closeDriver(driver):
     
 def runDriver(driver,url,id):
     t1 = datetime.datetime.now()
-    print(url)
     driver.get(url)
     ret = True
     t2 = datetime.datetime.now()
     tx = t2-t1
-    logging.info("driver.get cost %d seconds for id[%d]" %(tx.seconds,id))
+    logging.info("%s driver.get cost %d seconds for id[%d]" %(worker_name,tx.seconds,id))
     try:
         t1 = datetime.datetime.now()
         time.sleep(15)
         element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "feedbackAndImprovements")))
         t2 = datetime.datetime.now()
         tx = t2-t1
-        logging.info("WebDriverWait cost %d seconds" %tx.seconds)
+        logging.info("%s WebDriverWait cost %d seconds" %(worker_name,tx.seconds))
     except TimeoutException as tterr:
-        logging.info("Time out for get URL[%d]" %(id))
+        logging.info("%s Time out for get URL[%d]" %(worker_name,id))
         ret = False
     except Exception as err:
         print("error ",err)
@@ -65,9 +64,10 @@ def runDriver(driver,url,id):
 
 def execTask(task_q,result_q, stat_q,num):
     """Execute task coming from the task_q squeue"""
-    name = "[worker_"+str(num)+"]"
-    logging.info(name+" started")
-    print(name, " started")
+    global worker_name
+    worker_name = "[worker_"+str(num)+"]"
+    logging.info(worker_name+" started")
+    print(worker_name, " started")
     
     mydb = db.FlightPlanDatabase()
     mydb.connectDB()
@@ -87,8 +87,8 @@ def execTask(task_q,result_q, stat_q,num):
             t1 = datetime.datetime.now()
             flight_id = d['data']
             search_date=d['date']
-            print("%s Start handle task with flight id %d" %(name,flight_id))
-            logging.info("%s Start handle task with flight id %d" %(name,flight_id))
+            print("%s Start handle task with flight id %d" %(worker_name,flight_id))
+            logging.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
             
             result_q.put(flight_id)
             
@@ -97,8 +97,10 @@ def execTask(task_q,result_q, stat_q,num):
             
             url_creater=url.ExpediaReqURL()
             req_url = url_creater.createURL(**flight)
-            logging.info("%s send url : %s\n" %(name,req_url))
+            logging.info("%s send url : %s\n" %(worker_name,req_url))
+            
             getFlightPrice(driver, req_url,flight_id, num)
+            
             t2 = datetime.datetime.now()
             tx = t2-t1
             logging.info("%s End handle task flight id %d with time [%s] seconds" %(name,flight_id, tx.seconds))
@@ -129,7 +131,7 @@ def get_flight_info_from_flight_module_element(flight_module_element):
     
 def getFlightPrice(driver, url, id, worker_num):
     
-    flight_module_class_name='flight-module.segment.offer-listing'
+#     flight_module_class_name='flight-module.segment.offer-listing'
         
     flight_id=str(id)
     
