@@ -3,6 +3,7 @@
 import psycopg2
 import datetime
 import url
+import logging
 
 class DBError(Exception):
     def __init__(self,reason="unknown"):
@@ -179,7 +180,7 @@ class FlightPlanDatabase():
         try:
             cur.execute('''DELETE FROM flight_price_query_task where execute_date<=current_date;''')
             cur.execute('''insert into flight_price_query_task select id,0,current_date from flight where start_date>current_date;''')
-            cur.commit()
+            self.conn.commit()
             cur.execute('''SELECT count(*) from flight_price_query_task where execute_date=current_date;''')
             col = cur.fetchone()
             total_task_num = col[0]
@@ -260,8 +261,8 @@ class FlightPlanDatabase():
         cur.execute('''update flight_price_query_task set status=%s 
                     where flight_id=%s and execute_date=%s;''',
                     (status,flight_id,search_date))
-#         print("update flight_price_query_task set status=%s where flight_id=%s and execute_date=%s;"
-#               %(status,flight_id,search_date))
+        logging.info("[db] update flight_price_query_task set status=%s where flight_id=%s and execute_date=%s;"
+            %(status,flight_id,search_date))
         self.conn.commit()
         cur.close()
         
@@ -280,9 +281,8 @@ class FlightPlanDatabase():
             col = cur.fetchone()
             num = int(col[0])
             if num > 0:
-                print("num is %d when start_date = %s" %(num,sd_str))
                 continue
-            print("Invoke create_one_way_airlines(%s) " %(sd_str))
+#             print("Invoke create_one_way_airlines(%s) " %(sd_str))
             cur.execute('''select create_one_way_airlines(%s)''',(sd_str,))
             cur.execute('''select create_roundtrip_airlines(%s,%s)''',(sd_str,str(stay_days_range)))
             self.conn.commit()

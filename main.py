@@ -134,7 +134,7 @@ def create_today_flight_schedule():
 
     except db.DBError as err:
         print("Error: %s" % str(err))   
-        
+
 def main():
     print("Start the main function")
     d = str(datetime.date.today())
