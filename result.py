@@ -89,7 +89,7 @@ class Result():
 
         self.fdb.disconnectDB()
         return num_files
-        
+        fdb = db.FlightPlanDatabase()
     def handleOneResultFile(self,filename):
         """
         Analyze one file and get the result.
@@ -204,13 +204,8 @@ def sort_fun(name):
     
     return n
 
-def test3(dir_name):
-    re = Result()
-    file_list = re.getFileNameList(dir_name)
-    
-    for f in file_list:
-        print(f)
-    print('total files are',len(file_list))
+def test3():
+    analyze_results()
     
 def test2(top):
     for root,dirs,files in os.walk(top):
@@ -246,18 +241,55 @@ def test4():
             else:
                 print(e)
 
-def get_all_files(dir):
+def update_flight_list_into_db(fdb, flight_id,search_date,flight_list):
+    flight_list_len = len(flight_list)
+    if flight_list_len > 0:
+        fdb.update_status_in_flight_price_query_task_tbl(flight_id, 2, search_date)
+
+        for flight_dict in flight_list:
+            fdb.add_into_flight_price_tbl(flight_id,flight_dict['price'],flight_dict['company'],search_date)
+    else:
+        fdb.update_status_in_flight_price_query_task_tbl(flight_id, 0, search_date)
+  
+def get_all_files(dir_name):
     """
     Go through the dir and return all files as a list
     """
+    file_list=[]
+    for root,dirs,files in os.walk(dir_name):
+        new_files=sorted(files,key=sort_fun)
+        for f in new_files:
+            if '.txt' in f:
+                new_f=os.path.join(root,f)
+                file_list.append(new_f)
+            
+    return file_list
     
-def analyze_results(dir):
+def analyze_results(dir_name='results'):
     """
     Analyze the result files stored in the dir directory.
     Store the results in the database.
     """
-    pass
-
+    file_list = get_all_files(dir_name)
+    fdb = db.FlightPlanDatabase()
+    fdb.connectDB()
+    try:
+        for f in file_list:
+            t1 = datetime.datetime.now()
+            flight_id,search_date,flight_list = analyze_one_file(f)
+            search_date = search_date.split(' ')[0]
+            t2 = datetime.datetime.now()
+            tx = t2-t1
+            flight_list_len = len(flight_list)
+            logging.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
+            update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
+            
+            #Now move the file into backup directory
+            cmd="mv "+f +" "+"backup/"
+            os.system(cmd)
+    finally:
+        fdb.disconnectDB()
+            
 def get_block_list(lines):
     """
     Read the lines and return the result_list.
@@ -406,9 +438,12 @@ def analyze_one_file(filename):
     return flight_id,search_date,flight_list
 
 def main():
-#     readResults()
-#     test3('results')
-    test4()
+    d = str(datetime.date.today())
+    logname='log/air_'+d+'.log'
+    
+    logging.basicConfig(filename=logname, filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.INFO)
+
+    test3()
     
 if __name__=='__main__':
     main()

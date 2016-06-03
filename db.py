@@ -169,6 +169,8 @@ class FlightPlanDatabase():
         Insert one result for flight price into flight_price table
         """
         
+        
+        
         cur = self.conn.cursor()
         
         cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s)''',(company,))
@@ -182,9 +184,6 @@ class FlightPlanDatabase():
         
         self.conn.commit()
         cur.close()
-
-    def update_flight_price_query_task(self):
-        pass
             
     def create_today_task(self):
         """
@@ -203,24 +202,6 @@ class FlightPlanDatabase():
         finally:
             cur.close()
             return total_task_num            
-#         cur.execute(''' SELECT count(*) from flight_price_query_task where execute_date=current_date;''')
-#         num = 0
-#         total_task_num = 0
-#         
-#         col = cur.fetchone()
-#         num = col[0]
-#         
-#         if num==0:
-#             print("num == 0")
-#             cur.execute(''' SELECT * from create_today_task();''')
-#             col = cur.fetchone()
-#             total_task_num = col[0]
-#             print("get total_task_num = ",total_task_num)
-#             self.conn.commit()
-#         else:
-#             total_task_num = num
-#             print("total_task_num = ",total_task_num)
-#         return total_task_num
     
     def get_one_task_id(self):
         """
@@ -340,9 +321,18 @@ def test_add_flight_schedule():
         print("Error: %s" % str(err))    
     
 def main():
-    print("main")
 
-    test_add_flight_schedule()
+    d = str(datetime.date.today())
+    logname='log/air_'+d+'.log'
+    
+    logging.basicConfig(filename=logname, filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.INFO)
+
+    fdb= FlightPlanDatabase()
+    fdb.connectDB()
+    
+    fdb.update_status_in_flight_price_query_task_tbl(168821, 1, '2016-06-03')    
+    
+    fdb.disconnectDB()
 
 if __name__=='__main__':
     main()
