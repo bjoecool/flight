@@ -258,8 +258,6 @@ class FlightPlanDatabase():
         cur.execute('''update flight_price_query_task set status=%s 
                     where flight_id=%s and execute_date=%s;''',
                     (status,flight_id,search_date))
-        logging.info("[db] update flight_price_query_task set status=%s where flight_id=%s and execute_date=%s;"
-            %(status,flight_id,search_date))
         self.conn.commit()
         cur.close()
         
@@ -279,7 +277,6 @@ class FlightPlanDatabase():
             num = int(col[0])
             if num > 0:
                 continue
-#             print("Invoke create_one_way_airlines(%s) " %(sd_str))
             cur.execute('''select create_one_way_airlines(%s)''',(sd_str,))
             cur.execute('''select create_roundtrip_airlines(%s,%s)''',(sd_str,str(stay_days_range)))
             self.conn.commit()
@@ -292,7 +289,6 @@ def test():
     
     try:
         fdb.connectDB()
-#         total_task_num = fdb.create_today_task();
         task_id = fdb.get_one_task_id()
     
         print(task_id)

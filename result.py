@@ -31,215 +31,12 @@ class BlockParserStat(Enum):
     start_block = 1  #find Result
     in_block = 2 #find content but not Result when in start_block or in_block state
 
-class Result():
-    def __init__(self, dir="results"):
-        self.dir = dir
-        self.fdb = db.FlightPlanDatabase()
-      
-       
-    def handleResults(self):
-        """
-        This function is used to handle the result file in the results directory.
-        It will get the price and company name in the file, insert these info
-        into the flight_price table and update the status in the table
-        flight_price_query_task;
-        """
-        self.fdb.connectDB()
-        
-        file_list = self.getFileNameList(self.dir)
-        num_files = 0;
-        for file in file_list:
-            flight_id,search_date,price_list,company_list = self.handleOneResultFile(file)
-            
-            price_list_len=len(price_list)
-            company_list_len=len(company_list)
-            
-            if price_list_len == 0:
-                logging.warning('No price information in the result file[%s]' %file)
-                continue
-            
-            if company_list_len == 0:
-                logging.warning('No company name information in the result file[%s]' %file)
-                continue
-            
-            result_num = min(len(price_list),len(company_list))
-                       
-            search_date=search_date.split(' ')[0]
-            
-            if result_num > 0:
-                self.fdb.update_status_in_flight_price_query_task_tbl(flight_id, 1,search_date) #update status in flight_price_query_task
-                
-            for i in range(result_num):
-                try:
-                    self.fdb.add_into_flight_price_tbl(flight_id,
-                                                       price_list[i],
-                                                       company_list[i],
-                                                       search_date)
-                except IndexError:
-                    logging.warning("Index error for i is %d, file is %s" %(i,file))
-                    break
-                except Exception as err:
-                    logging.error('Error happened: %s' %str(err))
-                    break
-                
-            num_files+=1
-            
-            print('Finshed handle file[%s] with results[%d]' %(file,result_num))
-            logging.info('Finshed handle file[%s] with results[%d]' %(file,result_num))
-
-        self.fdb.disconnectDB()
-        return num_files
-        fdb = db.FlightPlanDatabase()
-    def handleOneResultFile(self,filename):
-        """
-        Analyze one file and get the result.
-        Return the result as a tuple including following elements:
-        flight_id --- A string indicate the flight id
-        search_date --- A string indicate the date which get the result.
-        result_list --- A list include all price
-        company_list --- A list includes all airline company name. 
-        The company_list[n] maps to the result_list[n].
-        """
-        #Now start to handle the results
-        flight_id="None"
-        search_date="None"
-        
-        with open(filename) as f:
-            # get flight_id
-            line = f.readline()
-            if len(line)>0:
-                if line.find("<flight_id>") != -1:
-                    if line[-1] == '\n':
-                        line=line[0:-1]
-                    flight_id=line[len("<flight_id>"):]
-            # get search_date
-            line = f.readline()
-            line = f.readline()
-            if len(line)>0:
-                if line.find("<search_date>") != -1:
-                    if line[-1] == '\n':
-                        line=line[0:-1]
-                    search_date=line[len("<search_date>"):]
-            
-            result_list=[]
-            company_list=[]
-            
-            # start to get the price        
-            for line in f.readlines():
-                try:
-                    if line.find("Result ") != -1:
-                        if line[-1] == '\n':
-                            line=line[0:-1]
-                        s=line.split(",",maxsplit=1)
-                        s1=s[1]
-                        info=s1.lstrip().replace("$","")
-                        result_list.append(info)
-                    elif line.find("company_name_") != -1:
-                        if line[-1] == '\n':
-                            line=line[0:-1]
-                            s=line.split(":",maxsplit=1)
-                            s1=s[1]
-                            company_list.append(s1)
-                except Exception as err:
-                    print("Error happened : ", str(err))
-                    
-        cmd="mv "+filename +" "+"backup/"
-        os.system(cmd)
-        
-        return (flight_id,search_date,result_list,company_list)
-
-    def sort_fun(self,name):
-        s = name.split('_')[2]
-        s1 = s.split('.')[0]
-        n = int(s1)
-        
-        return n
-        
-    def getFileNameList(self,dir_name):
-        """
-        Search the resutls dir and return the file names as a list
-        """
-        file_list=[]
-        for root,dirs,files in os.walk(dir_name):
-            new_files=sorted(files,key=sort_fun)
-            for f in new_files:
-                if '.txt' in f:
-                    print(f)
-                    new_f=os.path.join(root,f)
-                    file_list.append(new_f)
-                
-        return file_list
-    
-    def removeFile(self,filename):
-        pass
-
-def readResults():
-    logging.info("Function result.readResults was invoked")
-    re = Result()
-    try:
-        while 1:
-            num_files = re.handleResults();
-#             print("Total %d result files are handled" %num_files)
-            logging.info("Total %d result files are handled" %num_files)
-            time.sleep(10)
-    
-    except Exception as err:
-        print("error happend %s" %str(err))
-    finally:
-        print("Exit readResults")
-#     t1 = datetime.datetime.now()
-#     
-#     num_files = re.handleResults();
-# 
-#     t2 = datetime.datetime.now()
-#     
-#     tx = t2-t1
-#     logging.info("Total %d result files are handled" %num_files)
-#     logging.info("Total cost time is %d seconds" %tx.seconds)
-
 def sort_fun(name):
     s = name.split('_')[2]
     s1 = s.split('.')[0]
     n = int(s1)
     
     return n
-
-def test3():
-    analyze_results()
-    
-def test2(top):
-    for root,dirs,files in os.walk(top):
-        print('root is %s' %root)
-        print("============dirs are as following============")
-        for d in dirs:
-            print("   %s" %d)
-        new_files=sorted(files,key=sort_fun)
-        print("============file list ============")
-        for f in files:
-            print("   %s" %os.path.join(root,f))
-           
-        print("============new file list============")
-        for f in new_files:
-            print("   %s" %os.path.join(root,f))
-
-def test4():
-#     with open('results/res_20160602_168183.txt','rb') as f:
-#         block_list = get_block_list(f.readlines())
-#         print("len = %d" %len(block_list))
-#         for block in block_list:
-#             print(block)
-#             f = parse_block_info(block)
-#             print(f)
-#             print('\n')
-            
-    flight_tup = analyze_one_file('results/res_20160602_168183.txt')
-    if flight_tup != None:
-        for e in flight_tup:
-            if type(e)==type([]):
-                for x in e:
-                    print(x)
-            else:
-                print(e)
 
 def update_flight_list_into_db(fdb, flight_id,search_date,flight_list):
     flight_list_len = len(flight_list)
@@ -265,31 +62,6 @@ def get_all_files(dir_name):
             
     return file_list
     
-def analyze_results(dir_name='results'):
-    """
-    Analyze the result files stored in the dir directory.
-    Store the results in the database.
-    """
-    file_list = get_all_files(dir_name)
-    fdb = db.FlightPlanDatabase()
-    fdb.connectDB()
-    try:
-        for f in file_list:
-            t1 = datetime.datetime.now()
-            flight_id,search_date,flight_list = analyze_one_file(f)
-            search_date = search_date.split(' ')[0]
-            t2 = datetime.datetime.now()
-            tx = t2-t1
-            flight_list_len = len(flight_list)
-            logging.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
-            update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
-            
-            #Now move the file into backup directory
-            cmd="mv "+f +" "+"backup/"
-            os.system(cmd)
-    finally:
-        fdb.disconnectDB()
-            
 def get_block_list(lines):
     """
     Read the lines and return the result_list.
@@ -316,7 +88,6 @@ def get_block_list(lines):
     block_list = []
     for line in lines:
         if line.find(b'Result ')==0:
-#             print(line)
             if fsm_state == BlockParserStat.not_start:
                 fsm_state = BlockParserStat.start_block
                 block_info = []
@@ -437,13 +208,45 @@ def analyze_one_file(filename):
         
     return flight_id,search_date,flight_list
 
+def analyze_results(dir_name='results'):
+    """
+    Analyze the result files stored in the dir directory.
+    Store the results in the database.
+    """
+    file_list = get_all_files(dir_name)
+    fdb = db.FlightPlanDatabase()
+    fdb.connectDB()
+    try:
+        for f in file_list:
+            t1 = datetime.datetime.now()
+            flight_id,search_date,flight_list = analyze_one_file(f)
+            search_date = search_date.split(' ')[0]
+            t2 = datetime.datetime.now()
+            tx = t2-t1
+            flight_list_len = len(flight_list)
+            logging.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
+            update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
+            
+            #Now move the file into backup directory
+            cmd="mv "+f +" "+"backup/"
+            os.system(cmd)
+    finally:
+        fdb.disconnectDB()
+        
 def main():
     d = str(datetime.date.today())
     logname='log/air_'+d+'.log'
-    
     logging.basicConfig(filename=logname, filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.INFO)
 
-    test3()
+def test():
+    flight_tup = analyze_one_file('results/res_20160602_168183.txt')
+    if flight_tup != None:
+        for e in flight_tup:
+            if type(e)==type([]):
+                for x in e:
+                    print(x)
+            else:
+                print(e)
     
 if __name__=='__main__':
     main()
