@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-# Copyright (C) 2015-2025 Fang,jing   <jingwangian@gmail.com>
+# Copyright (C) 2015-2025 Wang,jing   <jingwangian@gmail.com>
 #
 # This file is part of Flight Inforation Query System (fiqs)
 #
