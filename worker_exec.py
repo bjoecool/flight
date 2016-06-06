@@ -78,7 +78,7 @@ def runDriver(driver,url,id):
     finally:
         return ret
 
-def execTask(task_q,result_q, stat_q,num):
+def execTask(task_q,result_q, stat_q,num,driver):
     """Execute task coming from the task_q squeue"""
     global worker_name
     worker_name = "[worker_"+str(num)+"]"
@@ -88,7 +88,7 @@ def execTask(task_q,result_q, stat_q,num):
     mydb = db.FlightPlanDatabase()
     mydb.connectDB()
     
-    driver = createDriver()
+#     driver = createDriver()
     
     try:
         while(1):
@@ -123,9 +123,11 @@ def execTask(task_q,result_q, stat_q,num):
             print("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             
             # Put the worker number into the stat queue
+            if num == 1:
+                time.sleep(1600)
             stat_q.put(num)
     finally:
-        closeDriver(driver)
+#         closeDriver(driver)
         logging.info(worker_name+" exited")
 
 def get_flight_info_from_flight_module_element(flight_module_element):

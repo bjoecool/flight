@@ -29,7 +29,7 @@ import multiprocessing as mp
 
 import worker
 
-g_worker_num = 1
+g_worker_num = 2
 
 process_name='[main]'
 
@@ -107,8 +107,9 @@ def start_task():
             d['cmd']='exit'
             task_q.put(d)
 
-        #Wait workers exit                       
-        time.sleep(10)
+        #Wait workers exit
+        print("Waiting 30 seconds for workers finishing their final works")                       
+        time.sleep(30)
                         
         wkm.stop_monitor()
         wkm.stop_workers()

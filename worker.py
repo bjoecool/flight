@@ -73,7 +73,7 @@ class WorkerMonitor():
         if self.handle != None:
             self.handle.terminate()
             self.handle=None
-            
+
     def start_workers(self,num):
         """
         Start number of workers.
@@ -105,7 +105,7 @@ class Worker():
         self.status = WorkerStatus.not_start
         self.handle = None
         self.no_heartbeat_times=0
-
+        self.driver = None
         
     def getWorkersNum(self):
         return self.num
@@ -114,7 +114,8 @@ class Worker():
         print("enter worker.start")
         try:
             print("Creating worker process")
-            p = mp.Process(target=wke.execTask, args=(self.task_q, self.result_q, self.stat_q, self.num))
+            self.driver = wke.createDriver()
+            p = mp.Process(target=wke.execTask, args=(self.task_q, self.result_q, self.stat_q, self.num,self.driver))
             self.handle = p
             self.status = WorkerStatus.running;
             self.no_heartbeat_times = 0
@@ -129,10 +130,14 @@ class Worker():
     
     def terminate(self):
         print("Worker[%d] is terminated" %self.num)
+        if self.driver != None:
+            self.driver.quit()
+            self.driver = None
         self.status = WorkerStatus.not_start
         self.handle.terminate()
         self.heartbeat = False
         self.handle = None
+        
                 
     def restart(self):
         self.terminate()
@@ -208,7 +213,7 @@ def monitor_exec(worker_list,stat_q):
                 wk.start()            
         
         if stat_q.empty() == True:
-            time.sleep(30)
+            time.sleep(20)
             for wk in worker_list:
                 wk.no_heartbeat_times = wk.no_heartbeat_times+1
             continue
