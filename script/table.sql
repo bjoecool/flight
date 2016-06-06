@@ -262,4 +262,17 @@ SELECT
     search_date as date
 FROM flight_price;
 
-
+CREATE OR REPLACE VIEW flight_detail_price_view AS
+SELECT 
+    flight_view.from,
+    flight_view.to,
+    trip,
+    start_date,
+    return_date,
+    stay_days,
+    adults,
+    class,
+    price,
+    company,
+    date as search_date 
+FROM flight_view JOIN flight_price_view ON id=flight_id;
