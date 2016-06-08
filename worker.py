@@ -120,7 +120,6 @@ class Worker():
             self.status = WorkerStatus.running;
             self.no_heartbeat_times = 0
             p.start()
-            print("woker[%d] started" %self.num)
         except Exception as err:
             self.handle = None
             print("Worker[%d] start failed, reason : %s " %(self.num,str(err)))

@@ -232,11 +232,47 @@ def analyze_results(dir_name='results'):
             os.system(cmd)
     finally:
         fdb.disconnectDB()
-        
+
+def schedule_results_analyze(dir_name='results', interval_time=60):
+    """
+    This function start a task to analyze the results in the dir_name
+    by invoking the analyze_results at a interval_time.
+    interval_time --- how many seconds the function start a task
+    """
+    while True:
+        time.sleep(interval_time)
+        analyze_results(dir_name)
+                
 def main():
     d = str(datetime.date.today())
-    logname='log/air_'+d+'.log'
-    logging.basicConfig(filename=logname, filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.INFO)
+    logname='log/result_'+d+'.log'
+#     logging.basicConfig(filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.DEBUG)
+    
+    #Create a Filehandler
+    logger_handle=logging.FileHandler(logname)
+    
+    # create formatter
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s - %(message)s')
+
+    # add formatter to logger_handle
+    logger_handle.setFormatter(formatter)
+
+    #get a logger instance
+    logger=logging.getLogger('[result]')
+    
+    #Add handle    
+    logger.addHandler(logger_handle)
+    
+    #Set level
+    logger.setLevel('DEBUG')
+    
+    #Output message
+    logger.warning('warning message')
+    logger.info('info message')
+    logger.debug('debug message')
+
+#     logger_handle.emit()
+    logger_handle.close()
 
 def test():
     flight_tup = analyze_one_file('results/res_20160602_168183.txt')
@@ -248,5 +284,46 @@ def test():
             else:
                 print(e)
     
+def log_test():
+    print("The name is %s" %__name__)
+    
+    print("login into log_test")
+    
+    d = str(datetime.date.today())
+    logname='log/result_'+d+'.log'
+#     logging.basicConfig(filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.DEBUG)
+    
+    #Create a Filehandler
+    logger_handle=logging.FileHandler(logname)
+    
+    # create formatter
+#     formatter = logging.Formatter('%(levelname)s: %(asctime)s - %(message)s')
+    formatter = logging.Formatter('%(name)s -- %(levelname)s -- %(asctime)s - %(message)s')
+
+    # add formatter to logger_handle
+    logger_handle.setFormatter(formatter)
+
+    #get a logger instance
+    logger=logging.getLogger('[result]')
+    
+    #Add handle    
+    logger.addHandler(logger_handle)
+    
+    #Set level
+    logger.setLevel('DEBUG')
+    
+    #Output message
+    logger.warning('warning message')
+    logger.info('info message')
+    logger.debug('debug message')
+    
+    flight_logger=logging.getLogger('[Main]')
+    
+    flight_logger.info('Using flight_logger to put message')
+
+#     logger_handle.emit()
+    logger_handle.close()
+    
 if __name__=='__main__':
+#     log_test()
     main()

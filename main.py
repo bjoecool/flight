@@ -26,12 +26,13 @@ import datetime
 import result
 
 import multiprocessing as mp
-
 import worker
 
 g_worker_num = 2
 
 process_name='[main]'
+
+logger_handle = None
 
 def start_task():
     global g_worker_num
@@ -127,7 +128,7 @@ def wait_tasks_finished(result_q, total_task_num):
             break
 
 def start_handle_result_process():
-    p = mp.Process(target=result.readResults, args=())
+    p = mp.Process(target=result.analyze_results, args=())
     
     return p
     
@@ -150,32 +151,77 @@ def create_today_flight_schedule():
         fdb.disconnectDB()
 
     except db.DBError as err:
-        print("Error: %s" % str(err))   
-
-def main():
-    print("Start the main function")
+        print("Error: %s" % str(err))
+        
+def init_log():
+    """
+    #Init the main logger
+    """
+    global logger_handle
+    
     d = str(datetime.date.today())
     t1 = datetime.datetime.now()
-    
     logname='log/air_'+d+'.log'
+    logger_handle=logging.FileHandler(logname)
     
-    logging.basicConfig(filename=logname, filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.INFO)
+    formatter = logging.Formatter('%(name)s -- %(levelname)s: %(asctime)s %(message)s')
     
-    logging.info("Start the main function")
+    logger_handle.setFormatter(formatter)
     
-    #Create 2 queue, one for task and another is for status of workers
+    main_logger=logging.getLogger('[Main]')
+    main_logger.addHandler(logger_handle)
+    main_logger.setLevel('INFO')
+    
+    main_logger.debug('This is main log debug message')
+    main_logger.info("This is main log info message")
+    main_logger.warning('This is main log warning message')
+    
+    worker_logger= logging.getLogger('[Worker]')
+    worker_logger.setLevel('DEBUG')
+    worker_logger.addHandler(logger_handle)
+    
+    worker_logger.debug('This is worker log debug message')
+    worker_logger.info('This is worker log info message')
+    worker_logger.warning('This is worker log warning message')
+    
+    return main_logger
 
-    start_task()
+def close_log():
+    global logger_handle
+    
+    logger_handle.close()
+        
+def main():
+    print("Start the main function")
+
+    t1 = datetime.datetime.now()
+    
+    main_logger = init_log()
+    
+#     start_task()
+
+    result.log_test()
         
     t2 = datetime.datetime.now()
-    
     tx = t2-t1
-    logging.info("Total cost time is %d seconds" %tx.seconds)
-
-    logging.info("Exit the main function")
-    print("Exit the main function")
-       
     
+    main_logger.info("Total cost time is %d seconds" %tx.seconds)
 
+    main_logger.info("Exit the main function")
+    print("Exit the main function")
+    
+    test_log()
+    
+    close_log()
+       
+def test_log():
+    worker_logger= logging.getLogger('[Worker]')
+    
+    worker_logger.info('Put worker_log in test_log function')
+    
+    main_logger=logging.getLogger('[Main]')
+    
+    main_logger.info('Put main_log in test_log function')
+    
 if __name__=='__main__':
     main()
