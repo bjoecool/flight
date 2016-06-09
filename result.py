@@ -26,6 +26,8 @@ import db
 import re
 from enum import Enum
 
+logger = None
+
 class BlockParserStat(Enum):
     not_start = 0
     start_block = 1  #find Result
@@ -224,7 +226,7 @@ def analyze_results(dir_name='results'):
             t2 = datetime.datetime.now()
             tx = t2-t1
             flight_list_len = len(flight_list)
-            logging.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
+            logger.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
             update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
             
             #Now move the file into backup directory
@@ -244,6 +246,8 @@ def schedule_results_analyze(dir_name='results', interval_time=60):
         analyze_results(dir_name)
                 
 def main():
+    global logger
+    
     d = str(datetime.date.today())
     logname='log/result_'+d+'.log'
 #     logging.basicConfig(filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.DEBUG)
@@ -264,13 +268,10 @@ def main():
     logger.addHandler(logger_handle)
     
     #Set level
-    logger.setLevel('DEBUG')
+    logger.setLevel('INFO')
     
-    #Output message
-    logger.warning('warning message')
-    logger.info('info message')
-    logger.debug('debug message')
-
+    analyze_results()
+    
 #     logger_handle.emit()
     logger_handle.close()
 
@@ -283,46 +284,6 @@ def test():
                     print(x)
             else:
                 print(e)
-    
-def log_test():
-    print("The name is %s" %__name__)
-    
-    print("login into log_test")
-    
-    d = str(datetime.date.today())
-    logname='log/result_'+d+'.log'
-#     logging.basicConfig(filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.DEBUG)
-    
-    #Create a Filehandler
-    logger_handle=logging.FileHandler(logname)
-    
-    # create formatter
-#     formatter = logging.Formatter('%(levelname)s: %(asctime)s - %(message)s')
-    formatter = logging.Formatter('%(name)s -- %(levelname)s -- %(asctime)s - %(message)s')
-
-    # add formatter to logger_handle
-    logger_handle.setFormatter(formatter)
-
-    #get a logger instance
-    logger=logging.getLogger('[result]')
-    
-    #Add handle    
-    logger.addHandler(logger_handle)
-    
-    #Set level
-    logger.setLevel('DEBUG')
-    
-    #Output message
-    logger.warning('warning message')
-    logger.info('info message')
-    logger.debug('debug message')
-    
-    flight_logger=logging.getLogger('[Main]')
-    
-    flight_logger.info('Using flight_logger to put message')
-
-#     logger_handle.emit()
-    logger_handle.close()
     
 if __name__=='__main__':
 #     log_test()

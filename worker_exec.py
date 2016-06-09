@@ -36,6 +36,8 @@ from recorder import Recorder
 
 worker_name=["worker_0"]
 
+worker_logger=None
+
 myProxy = "127.0.0.1:3128"
 
 proxy = Proxy({
@@ -47,9 +49,9 @@ proxy = Proxy({
     })
 
 def createDriver():
-    driver = webdriver.Firefox(proxy=proxy)
+#     driver = webdriver.Firefox(proxy=proxy)
     
-#    driver = webdriver.Firefox()
+    driver = webdriver.Firefox()
     return driver
 
 def closeDriver(driver):
@@ -57,21 +59,23 @@ def closeDriver(driver):
     driver.quit()
     
 def runDriver(driver,url,id):
+    global worker_logger
+    
     t1 = datetime.datetime.now()
     driver.get(url)
     ret = True
     t2 = datetime.datetime.now()
     tx = t2-t1
-    logging.info("%s driver.get cost %d seconds for id[%d]" %(worker_name,tx.seconds,id))
+    worker_logger.info("%s driver.get cost %d seconds for id[%d]" %(worker_name,tx.seconds,id))
     try:
         t1 = datetime.datetime.now()
         time.sleep(15)
         element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "feedbackAndImprovements")))
         t2 = datetime.datetime.now()
         tx = t2-t1
-        logging.info("%s WebDriverWait cost %d seconds" %(worker_name,tx.seconds))
+        worker_logger.info("%s WebDriverWait cost %d seconds" %(worker_name,tx.seconds))
     except TimeoutException as tterr:
-        logging.info("%s Time out for get URL[%d]" %(worker_name,id))
+        worker_logger.info("%s Time out for get URL[%d]" %(worker_name,id))
         ret = False
     except Exception as err:
         print("error ",err)
@@ -81,8 +85,11 @@ def runDriver(driver,url,id):
 def execTask(task_q,result_q, stat_q,num,driver):
     """Execute task coming from the task_q squeue"""
     global worker_name
+    global worker_logger
+    
     worker_name = "[worker_"+str(num)+"]"
-    logging.info(worker_name+" started")
+    worker_logger= logging.getLogger('[Worker]')
+    worker_logger.info(worker_name+" started")
     print(worker_name, " started")
     
     mydb = db.FlightPlanDatabase()
@@ -104,7 +111,7 @@ def execTask(task_q,result_q, stat_q,num,driver):
             flight_id = d['data']
             search_date=d['date']
             print("%s Start handle task with flight id %d" %(worker_name,flight_id))
-            logging.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
+            worker_logger.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
             
             result_q.put(flight_id)
             
@@ -113,13 +120,13 @@ def execTask(task_q,result_q, stat_q,num,driver):
             
             url_creater=url.ExpediaReqURL()
             req_url = url_creater.createURL(**flight)
-            logging.info("%s send url : %s\n" %(worker_name,req_url))
+            worker_logger.info("%s send url : %s\n" %(worker_name,req_url))
             
             getFlightPrice(driver, req_url,flight_id, num)
             
             t2 = datetime.datetime.now()
             tx = t2-t1
-            logging.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
+            worker_logger.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             print("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             
             # Put the worker number into the stat queue

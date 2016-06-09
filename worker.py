@@ -25,6 +25,9 @@ from enum import Enum
 
 import worker_exec as wke
 
+
+main_logger=None
+
 class WorkerStatus(Enum):
     not_start = 0
     running = 1
@@ -142,61 +145,11 @@ class Worker():
         self.terminate()
         self.start()
         
-def alloc_workers(task_q,result_q,g_worker_num):
-    worker_list=[]
-    
-    logging.info("Function alloc_workers was invoked")
-    
-    #worker number start from 1
-    for i in range(g_worker_num):
-        w = Worker(i+1,task_q,result_q)
-        worker_list.append(w)
-        
-    return worker_list
-
-def start_workers(worker_list):
-    logging.info("Function start_workers was invoked")
-    for wk in worker_list:
-        wk.start()
-
-def wait_workers(worker_list):
-    logging.info("Function wait_workers was invoked")
-    for p in worker_list:
-        p.join()
-
-def check_worker_status(worker_list, total_task_num):
-    """
-    Check the workers status. If no heartbeat received from workers then 
-    terminate that worker and start a new one.
-    worker_num --- indicate how many workers are there.
-    stat_q --- the queue that recevie heartbeat message from worker side
-    """
-    logging.info("Function check_worker_status was invoked")
-    
-    task_num = 0
-    while(1):
-        for wk in worker_list:
-            if wk.getHeartBeat()==False:
-                if wk.getStatus() == WorkerStatus.running:
-                    logging.warning("Worker[%d] is suspend" %wk.num)
-                    wk.restart()
-                elif wk.getStatus() == WorkerStatus.normal_exit:
-                    worker_list.remove(wk)
-                    logging.info("Removed worker[%d] " %wk.num)
-            else:
-                task_num += wk.getFinshedTaskNumber()
-                
-       
-        print("Current finished task num = %d" %task_num)
-
-        if len(worker_list) == 0:
-            print("All workers have exited")
-            break
-
-        time.sleep(300)  #Every 5min to check workers status once
-
 def monitor_exec(worker_list,stat_q):
+    global main_logger
+    
     process_name='[monitor_exec]'
+    main_logger=logging.getLogger('[Main]')
     
     print("Enter into %s" %process_name)
     if len(worker_list) == 0:
@@ -207,7 +160,7 @@ def monitor_exec(worker_list,stat_q):
     while(1):
         for wk in worker_list:
             if wk.no_heartbeat_times>max_heartbeat_times:
-                logging.info("%s woker[%d] no_heartbeat_times reach to max value %d, restart it" %(process_name,wk.num,max_heartbeat_times))
+                main_logger.info("%s woker[%d] no_heartbeat_times reach to max value %d, restart it" %(process_name,wk.num,max_heartbeat_times))
                 wk.terminate()
                 wk.start()            
         
@@ -222,7 +175,7 @@ def monitor_exec(worker_list,stat_q):
         for wk in worker_list:
             if wk.num == num:
                 wk.no_heartbeat_times=0
-                logging.info("%s Received heartbeat from worker[%d]" %(process_name,num))
+                main_logger.info("%s Received heartbeat from worker[%d]" %(process_name,num))
         
                 
 def test(url,id):

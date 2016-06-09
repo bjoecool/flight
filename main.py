@@ -28,7 +28,7 @@ import result
 import multiprocessing as mp
 import worker
 
-g_worker_num = 2
+g_worker_num = 4
 
 process_name='[main]'
 
@@ -37,7 +37,7 @@ logger_handle = None
 def start_task():
     global g_worker_num
     
-    max_task_num = 10
+    max_task_num = 100
 
     # create today's flight schedule and task
     create_today_flight_schedule()
@@ -164,7 +164,7 @@ def init_log():
     logname='log/air_'+d+'.log'
     logger_handle=logging.FileHandler(logname)
     
-    formatter = logging.Formatter('%(name)s -- %(levelname)s: %(asctime)s %(message)s')
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s')
     
     logger_handle.setFormatter(formatter)
     
@@ -198,7 +198,7 @@ def main():
     
     main_logger = init_log()
     
-#     start_task()
+    start_task()
 
     result.log_test()
         
