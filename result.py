@@ -40,6 +40,7 @@ def sort_fun(name):
     
     return n
 
+        
 def update_flight_list_into_db(fdb, flight_id,search_date,flight_list):
     flight_list_len = len(flight_list)
     if flight_list_len > 0:
@@ -135,6 +136,11 @@ def parse_block_info(block_info):
     Return a fligh_info dict including following information:
     flight_info['price']  as a string
     flight_info['company'] as a string
+    flight_info['dep_time'] as a string   ---departure time
+    flight_info['arr_time'] as a string   ---arrival time
+    flight_info['span_days'] as a int  ---flight span days, default 0
+    flight_info['duration'] as a string   --- flight duration
+    flight_info['stop_times'] as a int --- stop times, default 1
     """
     flight_info = None
     
@@ -154,13 +160,30 @@ def parse_block_info(block_info):
     for line in block_info:
         s = line
         if re.search(b'.*m - .*m$',s)!=None:
+            t = s.split(s,'-',max_split=1)
+            dep_time = t[0].strip()
+            arr_time = t[1].strip()
             company_name = block_info[i+1].strip()
             flight_info['company'] = company_name.decode()
+            flight_info['dep_time'] = dep_time
+            flight_info['arr_time'] = arr_time
+            flight_info['span_days'] = 0
             break
         elif re.search(b'.*m - .*m +.*$',s)!=None:
+            t = s.split(s,'-',max_split=1)
+            dep_time = t[0].strip()
+            t2 = t[1].split('+',max_split=1)
+            arr_time = t2[0].strip()
+            span_days = t2[1].strip()
             company_name = block_info[i+2].strip()
             flight_info['company'] = company_name.decode()
-            break
+            flight_info['dep_time'] = dep_time
+            flight_info['arr_time'] = arr_time
+            flight_info['span_days'] = span_days
+        elif re.search(b'. stop')!=None:
+            stop_times=int(s[1])
+            flight_info['stop_times']=stop_times
+        
         i = i+1
     
     return flight_info
@@ -169,16 +192,23 @@ def analyze_one_file(filename):
     """
     Analyze one result file and return the result as a tuple
     The return tuple include 3 elements:
-    1. flight_id
-    2. search_date
-    3. flight_list: Every element is a flight_info dict
+    flight_list: Every element is a flight_info dict
         flight_info dict has following keys:
-        flight_info['price']  ---- the price as a string
-        flight_info['company'] ---- the company name as a string
+        flight_info['id']
+        flight_info['search_date']
+        flight_info['price']  as a string
+        flight_info['company'] as a string
+        flight_info['dep_time'] as a string   ---departure time
+        flight_info['arr_time'] as a string   ---arrival time
+        flight_info['span_days'] as a int  ---flight span days, default 0
+        flight_info['duration'] as a string   --- flight duration
+        flight_info['stop_times'] as a int --- stop times, default 1        
     """
     flight_id="None"
     search_date="None"
     flight_list=[]
+    
+    t1 = datetime.datetime.now()
 
     with open(filename,'rb') as f:
         # get flight_id
@@ -206,11 +236,18 @@ def analyze_one_file(filename):
         for block in block_list:
             flight_info = parse_block_info(block)
             if flight_info != None:
+                flight_info['id'] = flight_id
+                flight_info['search_date'] = search_date
                 flight_list.append(flight_info)
         
+    t2 = datetime.datetime.now()
+    tx = t2-t1
+    flight_list_len = len(flight_list)
+    logger.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
+
     return flight_id,search_date,flight_list
 
-def analyze_results(dir_name='results'):
+def analyze_results_to_db(dir_name='results'):
     """
     Analyze the result files stored in the dir directory.
     Store the results in the database.
@@ -220,13 +257,8 @@ def analyze_results(dir_name='results'):
     fdb.connectDB()
     try:
         for f in file_list:
-            t1 = datetime.datetime.now()
             flight_id,search_date,flight_list = analyze_one_file(f)
             search_date = search_date.split(' ')[0]
-            t2 = datetime.datetime.now()
-            tx = t2-t1
-            flight_list_len = len(flight_list)
-            logger.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
             update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
             
             #Now move the file into backup directory
