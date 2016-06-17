@@ -49,9 +49,9 @@ proxy = Proxy({
     })
 
 def createDriver():
-#     driver = webdriver.Firefox(proxy=proxy)
+    driver = webdriver.Firefox(proxy=proxy)
     
-    driver = webdriver.Firefox()
+#     driver = webdriver.Firefox()
     return driver
 
 def closeDriver(driver):
@@ -174,56 +174,38 @@ def getFlightPrice(driver, url, id, worker_num):
         time.sleep(1)
         body_element = driver.find_element_by_tag_name('body')
         re.writeN(body_element.text)
-        
-#         flight_module_element_list = driver.find_elements_by_css_selector('.flight-module.offer-listing')
-        
-#         price_element = driver.find_element_by_css_selector('.flight-module.offer-listing.price-column.offer-price')
-#         p = price_element.text()
-#         
-#         company_element = driver.find_element_by_css_selector('.flight-module.offer-listing.flex-card.flex-area-primary.primary-block.secondary')
-#         c = company_element.text()
-        
-#         print("p = %s, c= %s" %(p,c))
-#         
-#         for flight_module_element in flight_module_element_list:
-#             print(flight_module_element)
-#             price,company = get_flight_info_from_flight_module_element(flight_module_element)
-#             print('price is %s' %price)
-#             break
-
 
         time.sleep(1)
         re.finish()
     else:
         print("worker[%d] failed to handle flight_id[%d]" %(worker_num, id))
 
+def get_urls_from_file(filename):
+    """
+    Get the urls from the file and return as a list.
+    """
+    url_list = []
+    
+    with open(filename,'r') as f:
+        for line in f.readlines():
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            else:
+                url_list.append(line)
+
+    return url_list
+
 def test():
     d = createDriver()
-    url1='''https://www.expedia.com.au/Flights-Search?trip=oneway&leg1=from:SYD,to:SHA,departure:16/06/2016TANYT&passengers=children:0,adults:1,seniors:0,infantinlap:Y&mode=search'''
     
-    url2='''https://www.expedia.com.au/Flights-Search?trip=oneway&leg1=from:SYD,to:SHA,departure:17/06/2016TANYT&passengers=children:0,adults:1,seniors:0,infantinlap:Y&mode=search'''
-    
-    url3='''https://www.expedia.com.au/Flights-Search?trip=oneway&leg1=from:SYD,to:SHA,departure:18/06/2016TANYT&passengers=children:0,adults:1,seniors:0,infantinlap:Y&mode=search'''
+    url_list = get_urls_from_file('test/url_list.txt')
+    num=1
     
     try:
-        t1 = datetime.datetime.now()
-        getFlightPrice(d,url1,1,1)
-        t2 = datetime.datetime.now()
-        tx = t2-t1
-        print("Total cost time for url1 is %d seconds" %tx.seconds)
-        
-#         t1 = datetime.datetime.now()
-#         getFlightPrice(d,url2,2,1)
-#         t2 = datetime.datetime.now()
-#         tx = t2-t1
-#         print("Total cost time for url2 is %d seconds" %tx.seconds)
-#          
-#         t1 = datetime.datetime.now()
-#         getFlightPrice(d,url3,3,1)
-#         t2 = datetime.datetime.now()
-#         tx = t2-t1
-#         print("Total cost time for url3 is %d seconds" %tx.seconds)
-    
+        for url in url_list:
+            getFlightPrice(d,url,num,1)
+            num+=1
     finally:    
         closeDriver(d)
 

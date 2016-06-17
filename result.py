@@ -275,7 +275,7 @@ def schedule_results_analyze(dir_name='results', interval_time=60):
     """
     while True:
         time.sleep(interval_time)
-        analyze_results(dir_name)
+        analyze_results_to_db(dir_name)
                 
 def main():
     global logger
@@ -302,7 +302,7 @@ def main():
     #Set level
     logger.setLevel('INFO')
     
-    analyze_results()
+    analyze_results_to_db()
     
 #     logger_handle.emit()
     logger_handle.close()
