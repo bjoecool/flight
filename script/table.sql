@@ -87,6 +87,12 @@ CREATE TABLE flight_price(
 flight_id int4, --- references flight(id)
 price money,
 company_id int4, ---references airline_company(id)
+departure_time time, 
+arrival_time time,
+span_days int4,  
+duration interval,  ---flight duration
+stop_times int4,    --- stop times in the flight duration,default is 1 which means fligth to destination directly
+rate float,
 search_date date --- date to get it
 );
 
@@ -243,7 +249,7 @@ SELECT
     get_city_name(airline.to_city) as to,
     get_trip_name(trip) as trip,
     start_date,
-    start_date+stay_days as return_date,
+    return_date,
     stay_days,
     adults,
     children,
@@ -259,6 +265,12 @@ SELECT
     flight_id,
     price,
     get_company_name(company_id) as company,
+    departure_time,
+    arrival_time,
+    span_days,
+    duration,
+    stop_times,
+    rate,
     search_date as date
 FROM flight_price;
 
@@ -270,6 +282,12 @@ SELECT
     start_date,
     return_date,
     stay_days,
+    departure_time,
+    arrival_time,
+    span_days,
+    duration,
+    stop_times,
+    rate,
     adults,
     class,
     price,
