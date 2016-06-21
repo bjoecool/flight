@@ -40,14 +40,33 @@ def sort_fun(name):
     
     return n
 
-        
+def print_flight_list(fdb, flight_id,search_date,flight_list):
+    print('flight_id = %s, search_date = %s' %(flight_id,search_date))
+
+    i = 1
+    for flight_info in flight_list:
+        for key in flight_info.keys():
+            print('%s -- %s' %(key,flight_info[key]))
+        print('\n')
+#         print('Result[%d], %s' %(i,flight_info['price']))
+#         print('\tTime From %s - %s' %(flight_info['dep_time'],flight_info['arr_time']))
+#         print('\tCompany - %s' %flight_info['company'])
+#         print('\tspan_days %s' %flight_info['span_days'])
+# #         print('\tduration %s' %flight_info['duration'])
+#         print('\t%s stop' %flight_info['stop_times'])
+#         i +=1
+#         print('\n')
+            
+    
+    print('\n\n')
+                
 def update_flight_list_into_db(fdb, flight_id,search_date,flight_list):
     flight_list_len = len(flight_list)
     if flight_list_len > 0:
         fdb.update_status_in_flight_price_query_task_tbl(flight_id, 2, search_date)
 
-        for flight_dict in flight_list:
-            fdb.add_into_flight_price_tbl(flight_id,flight_dict['price'],flight_dict['company'],search_date)
+        for flight_info in flight_list:
+            fdb.add_into_flight_price_tbl(flight_info)
     else:
         fdb.update_status_in_flight_price_query_task_tbl(flight_id, 0, search_date)
   
@@ -111,6 +130,8 @@ def get_block_list(lines):
             elif fsm_state == BlockParserStat.in_block:
                 block_info.append(line)
 
+    #Append the last one,don't forget it
+    block_list.append(block_info)
     return block_list
 
 def parse_block_info(block_info):
@@ -139,7 +160,6 @@ def parse_block_info(block_info):
     flight_info['dep_time'] as a string   ---departure time
     flight_info['arr_time'] as a string   ---arrival time
     flight_info['span_days'] as a int  ---flight span days, default 0
-    flight_info['duration'] as a string   --- flight duration
     flight_info['stop_times'] as a int --- stop times, default 1
     """
     flight_info = None
@@ -157,35 +177,35 @@ def parse_block_info(block_info):
             return flight_info
     
     i = 0
+    j=1
     for line in block_info:
         s = line
         if re.search(b'.*m - .*m$',s)!=None:
-            t = s.split(s,'-',max_split=1)
+            t = s.split(b'-',maxsplit=1)
             dep_time = t[0].strip()
             arr_time = t[1].strip()
             company_name = block_info[i+1].strip()
             flight_info['company'] = company_name.decode()
-            flight_info['dep_time'] = dep_time
-            flight_info['arr_time'] = arr_time
+            flight_info['dep_time'] = dep_time.decode()
+            flight_info['arr_time'] = arr_time.decode()
             flight_info['span_days'] = 0
-            break
         elif re.search(b'.*m - .*m +.*$',s)!=None:
-            t = s.split(s,'-',max_split=1)
+            t = s.split(b'-',maxsplit=1)
             dep_time = t[0].strip()
-            t2 = t[1].split('+',max_split=1)
+            t2 = t[1].split(b'+',maxsplit=1)
             arr_time = t2[0].strip()
             span_days = t2[1].strip()
             company_name = block_info[i+2].strip()
             flight_info['company'] = company_name.decode()
-            flight_info['dep_time'] = dep_time
-            flight_info['arr_time'] = arr_time
-            flight_info['span_days'] = span_days
-        elif re.search(b'. stop')!=None:
-            stop_times=int(s[1])
+            flight_info['dep_time'] = dep_time.decode()
+            flight_info['arr_time'] = arr_time.decode()
+            flight_info['span_days'] = span_days.decode()
+        elif re.search(b'. stop',s)!=None:
+            stop_times=int(s[0:2].decode().strip())
+            j+=1
             flight_info['stop_times']=stop_times
-        
-        i = i+1
-    
+        i +=1
+
     return flight_info
         
 def analyze_one_file(filename):
@@ -201,9 +221,10 @@ def analyze_one_file(filename):
         flight_info['dep_time'] as a string   ---departure time
         flight_info['arr_time'] as a string   ---arrival time
         flight_info['span_days'] as a int  ---flight span days, default 0
-        flight_info['duration'] as a string   --- flight duration
         flight_info['stop_times'] as a int --- stop times, default 1        
     """
+    global logger
+    
     flight_id="None"
     search_date="None"
     flight_list=[]
@@ -229,11 +250,17 @@ def analyze_one_file(filename):
                 if line[-1] == b'\n':
                     line=line[0:-1]
                 search_date=line[len(b"<search_date>"):].decode()
+                search_date = search_date.split(' ')[0]
         
         # Now get the flight list
         block_list = get_block_list(f.readlines())
         
+#         num=1
         for block in block_list:
+#             print('[block%d] '% num)
+#             print(block)
+#             num +=1
+#             print('\n')
             flight_info = parse_block_info(block)
             if flight_info != None:
                 flight_info['id'] = flight_id
@@ -258,12 +285,12 @@ def analyze_results_to_db(dir_name='results'):
     try:
         for f in file_list:
             flight_id,search_date,flight_list = analyze_one_file(f)
-            search_date = search_date.split(' ')[0]
+            print_flight_list(fdb,flight_id,search_date,flight_list)
             update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
             
             #Now move the file into backup directory
             cmd="mv "+f +" "+"backup/"
-            os.system(cmd)
+#             os.system(cmd)
     finally:
         fdb.disconnectDB()
 
@@ -288,7 +315,7 @@ def main():
     logger_handle=logging.FileHandler(logname)
     
     # create formatter
-    formatter = logging.Formatter('%(levelname)s: %(asctime)s - %(message)s')
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s - %(name)-8s %(message)s')
 
     # add formatter to logger_handle
     logger_handle.setFormatter(formatter)

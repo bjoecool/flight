@@ -164,23 +164,31 @@ class FlightPlanDatabase():
         
         return flight
 
-    def add_into_flight_price_tbl(self, flight_id, price, company, search_date):
+    def add_into_flight_price_tbl(self, flight_info):
         """
         Insert one result for flight price into flight_price table
         """
-        
-        
-        
         cur = self.conn.cursor()
         
-        cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s)''',(company,))
+        print('company --- %s' %flight_info['company'])
+        
+        cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s)''',(flight_info['company'],))
+        
         
         company_tuple=cur.fetchone()
         company_id=company_tuple[0]
         
-        cur.execute('''INSERT INTO flight_price (flight_id,price,company_id,search_date) 
-                        VALUES(%s,%s,%s,%s);''',
-                        (flight_id,price,company_id,search_date))
+        cur.execute('''INSERT INTO flight_price 
+                       (flight_id,price,company_id,departure_time,arrival_time,span_days,stop_times,search_date)
+                        VALUES(%s,%s,%s,%s,%s,%s,%s,%s);''',
+                        (flight_info['id'],
+                         flight_info['price'],
+                         company_id,
+                         flight_info['dep_time'],
+                         flight_info['arr_time'],
+                         flight_info['span_days'],
+                         flight_info['stop_times'],
+                         flight_info['search_date']))
         
         self.conn.commit()
         cur.close()
