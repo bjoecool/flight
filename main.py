@@ -28,7 +28,7 @@ import result
 import multiprocessing as mp
 import worker
 
-g_worker_num = 4
+g_worker_num = 1
 
 process_name='[main]'
 
@@ -37,7 +37,7 @@ logger_handle = None
 def start_task():
     global g_worker_num
     
-    max_task_num = 100
+    max_task_num = 4
 
     # create today's flight schedule and task
     create_today_flight_schedule()
@@ -199,9 +199,7 @@ def main():
     main_logger = init_log()
     
     start_task()
-
-    result.log_test()
-        
+       
     t2 = datetime.datetime.now()
     tx = t2-t1
     
@@ -209,19 +207,6 @@ def main():
 
     main_logger.info("Exit the main function")
     print("Exit the main function")
-    
-    test_log()
-    
-    close_log()
-       
-def test_log():
-    worker_logger= logging.getLogger('[Worker]')
-    
-    worker_logger.info('Put worker_log in test_log function')
-    
-    main_logger=logging.getLogger('[Main]')
-    
-    main_logger.info('Put main_log in test_log function')
     
 if __name__=='__main__':
     main()
