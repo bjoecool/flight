@@ -92,6 +92,7 @@ arrival_time time,
 span_days int4,  
 duration interval,  ---flight duration
 stop_times int4,    --- stop times in the flight duration,default is 1 which means fligth to destination directly
+stop_info text, --- detail stop information
 rate float,
 search_date date --- date to get it
 );
@@ -270,6 +271,7 @@ SELECT
     span_days,
     duration,
     stop_times,
+    stop_info,
     rate,
     search_date as date
 FROM flight_price;
@@ -287,6 +289,7 @@ SELECT
     span_days,
     duration,
     stop_times,
+    stop_info,
     rate,
     adults,
     class,

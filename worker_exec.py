@@ -209,7 +209,43 @@ def test():
     finally:    
         closeDriver(d)
 
+def init_log():
+    """
+    #Init the main logger
+    """
+    global logger_handle
+    global main_logger
+    global worker_logger
+    
+    d = str(datetime.date.today())
+    t1 = datetime.datetime.now()
+    logname='log/air_'+d+'.log'
+    logger_handle=logging.FileHandler(logname)
+    
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s')
+    
+    logger_handle.setFormatter(formatter)
+    
+    main_logger=logging.getLogger('[Main]')
+    main_logger.addHandler(logger_handle)
+    main_logger.setLevel('INFO')
+    
+    main_logger.debug('This is main log debug message')
+    main_logger.info("This is main log info message")
+    main_logger.warning('This is main log warning message')
+    
+    worker_logger= logging.getLogger('[Worker]')
+    worker_logger.setLevel('DEBUG')
+    worker_logger.addHandler(logger_handle)
+    
+    worker_logger.debug('This is worker log debug message')
+    worker_logger.info('This is worker log info message')
+    worker_logger.warning('This is worker log warning message')
+    
+    return main_logger
+
 def main():
+    init_log()
     test()
 
 if __name__=='__main__':

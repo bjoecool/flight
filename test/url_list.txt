@@ -1,1 +1,2 @@
-https://www.expedia.com.au/Flights-Search?mode=search&trip=roundtrip&leg1=from:Sydney%20%28SYD-All%20Airports%29,to:Beijing,%20China%20%28BJS-All%20Airports%29,departure:18/06/2016TANYT&leg2=from:Beijing,%20China%20%28BJS-All%20Airports%29,to:Sydney%20%28SYD-All%20Airports%29,departure:29/07/2016TANYT&passengers=children:0,adults:1,infantinlap:false&options=cabinclass:economy
+https://www.expedia.com.au/Flights-Search?mode=search&leg1=from:Sydney,%20NSW,%20Australia%20%28SYD-All%20Airports%29,to:Hong%20Kong,%20Hong%20Kong%20%28HKG-Hong%20Kong%20Intl.%29,departure:30/08/2016TANYT&trip=oneway&passengers=children:0,adults:1,infantinlap:N&options=cabinclass:economy&origref=www.expedia.com.au%2FFlight-Search-All
+
