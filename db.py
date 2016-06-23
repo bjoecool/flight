@@ -21,6 +21,8 @@ import datetime
 import url
 import logging
 
+main_logger = None
+
 class DBError(Exception):
     def __init__(self,reason="unknown"):
         self.reason = reason
@@ -146,7 +148,18 @@ class FlightPlanDatabase():
         
     def get_flight_by_id(self, id):
         cur = self.conn.cursor()
-        cur.execute("select * from flight_view where id=%s", (id,))
+        cur.execute('''select id,
+                    flight_view.from,
+                    flight_view.to,
+                    trip,
+                    start_date,
+                    stay_days,
+                    adults,
+                    children,
+                    age,
+                    class 
+                    from flight_view where id=%s''', (id,))
+        
         tup = cur.fetchone()
         flight={}
         flight['id']=tup[0]
@@ -154,11 +167,12 @@ class FlightPlanDatabase():
         flight['to'] = tup[2]
         flight['trip'] = tup[3]
         flight['start_date'] = tup[4]
-        flight['return_date'] = tup[5]
-        flight['adults'] = tup[7]
-        flight['children'] = tup[8]
-        flight['children_age'] = tup[9]
-        flight['cabinclass'] = tup[10]
+        flight['return_date'] = tup[4]
+        flight['stay_days'] = tup[5]
+        flight['adults'] = tup[6]
+        flight['children'] = tup[7]
+        flight['children_age'] = tup[8]
+        flight['cabinclass'] = tup[9]
         
         cur.close()
         
@@ -179,15 +193,17 @@ class FlightPlanDatabase():
         company_id=company_tuple[0]
         
         cur.execute('''INSERT INTO flight_price 
-                       (flight_id,price,company_id,departure_time,arrival_time,span_days,stop_times,search_date)
-                        VALUES(%s,%s,%s,%s,%s,%s,%s,%s);''',
+                       (flight_id,price,company_id,departure_time,arrival_time,duration,span_days,stop,stop_info,search_date)
+                        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);''',
                         (flight_info['id'],
                          flight_info['price'],
                          company_id,
                          flight_info['dep_time'],
                          flight_info['arr_time'],
+                         flight_info['duration'],
                          flight_info['span_days'],
-                         flight_info['stop_times'],
+                         flight_info['stop'],
+                         flight_info['stop_info'],
                          flight_info['search_date']))
         
         self.conn.commit()
@@ -286,7 +302,7 @@ class FlightPlanDatabase():
             if num > 0:
                 continue
             cur.execute('''select create_one_way_airlines(%s)''',(sd_str,))
-            cur.execute('''select create_roundtrip_airlines(%s,%s)''',(sd_str,str(stay_days_range)))
+#            cur.execute('''select create_roundtrip_airlines(%s,%s)''',(sd_str,str(stay_days_range)))
             self.conn.commit()
         cur.close()
         
@@ -323,20 +339,51 @@ def test_add_flight_schedule():
 
     except DBError as err:
         print("Error: %s" % str(err))    
-    
-def main():
 
+def create_today_flight_schedule():
+    fdb = FlightPlanDatabase()
+    try:
+        fdb.connectDB()
+        
+        start_date=datetime.date.today()+datetime.timedelta(1)
+        start_date_range=120
+        
+        fdb.add_one_group_flight_schedule(start_date,start_date_range)
+        
+        fdb.create_today_task()
+
+    except DBError as err:
+        print("Error: %s" % str(err))
+    finally:
+        fdb.disconnectDB()
+
+def init_log():
+    """
+    #Init the main logger
+    """
+    global logger_handle
+    
     d = str(datetime.date.today())
+    t1 = datetime.datetime.now()
     logname='log/air_'+d+'.log'
+    logger_handle=logging.FileHandler(logname)
     
-    logging.basicConfig(filename=logname, filemode='a', format='%(levelname)s: %(asctime)s %(message)s', level=logging.INFO)
-
-    fdb= FlightPlanDatabase()
-    fdb.connectDB()
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s')
     
-    fdb.update_status_in_flight_price_query_task_tbl(168821, 1, '2016-06-03')    
+    logger_handle.setFormatter(formatter)
     
-    fdb.disconnectDB()
+    main_logger=logging.getLogger('[Main]')
+    main_logger.addHandler(logger_handle)
+    main_logger.setLevel('INFO')
+    
+    worker_logger= logging.getLogger('[Worker]')
+    worker_logger.setLevel('INFO')
+    worker_logger.addHandler(logger_handle)
+    
+    return main_logger
+            
+def main():
+    create_today_flight_schedule()
 
 if __name__=='__main__':
     main()

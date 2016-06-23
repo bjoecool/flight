@@ -45,8 +45,10 @@ def print_flight_list(fdb, flight_id,search_date,flight_list):
 
     i = 1
     for flight_info in flight_list:
+        print('Result[%d], %s' %(i,flight_info['price']))
+        i +=1
         for key in flight_info.keys():
-            print('%s -- %s' %(key,flight_info[key]))
+            print('\t%s -- %s' %(key,flight_info[key]))
         print('\n')
 #         print('Result[%d], %s' %(i,flight_info['price']))
 #         print('\tTime From %s - %s' %(flight_info['dep_time'],flight_info['arr_time']))
@@ -160,21 +162,23 @@ def parse_block_info(block_info):
     flight_info['dep_time'] as a string   ---departure time
     flight_info['arr_time'] as a string   ---arrival time
     flight_info['span_days'] as a int  ---flight span days, default 0
-    flight_info['stop_times'] as a int --- stop times, default 1
+    flight_info['stop'] as a string --- n stop  or direct
+    flight_info['stop_info'] as a string --- stop information
     """
     flight_info = None
     
     line_1 = block_info[0]
     
-    if line_1.find(b'Result ')==0:
-        price = line_1.split(b',',maxsplit=1)[1]
+    if line_1.find(b'Result ')==0 and b'$' in line_1:
+        price = line_1.split(b'$',maxsplit=1)[1]
         price = price.strip()
-        price = price.replace(b'$',b'').replace(b',',b'')
         if price != None:
             flight_info=dict()
             flight_info['price']=price.decode()
         else:
             return flight_info
+    else:
+        return None
     
     i = 0
     j=1
@@ -184,26 +188,56 @@ def parse_block_info(block_info):
             t = s.split(b'-',maxsplit=1)
             dep_time = t[0].strip()
             arr_time = t[1].strip()
-            company_name = block_info[i+1].strip()
-            flight_info['company'] = company_name.decode()
+            
             flight_info['dep_time'] = dep_time.decode()
             flight_info['arr_time'] = arr_time.decode()
             flight_info['span_days'] = 0
+            
+            offset_num = 0
+            company_name = block_info[i+1+offset_num].strip()
+            duration = block_info[i+2+offset_num].strip()
+            start_from = block_info[i+3+offset_num].strip()
+            stop = block_info[i+4+offset_num].strip()
+            if b'stop' in stop:
+                stop_info = block_info[i+5+offset_num].strip()
+            else:
+                stop_info = None
+            
+            flight_info['company'] = company_name.decode()
+            flight_info['duration'] = duration.decode()
+            flight_info['stop'] = stop.decode()
+            if stop_info != None:
+                flight_info['stop_info'] = stop_info.decode()
+            else:
+                flight_info['stop_info'] = ''
         elif re.search(b'.*m - .*m +.*$',s)!=None:
             t = s.split(b'-',maxsplit=1)
             dep_time = t[0].strip()
             t2 = t[1].split(b'+',maxsplit=1)
             arr_time = t2[0].strip()
             span_days = t2[1].strip()
-            company_name = block_info[i+2].strip()
-            flight_info['company'] = company_name.decode()
+            
             flight_info['dep_time'] = dep_time.decode()
             flight_info['arr_time'] = arr_time.decode()
-            flight_info['span_days'] = span_days.decode()
-        elif re.search(b'. stop',s)!=None:
-            stop_times=int(s[0:2].decode().strip())
-            j+=1
-            flight_info['stop_times']=stop_times
+            flight_info['span_days'] = int(span_days.decode())
+            
+            offset_num = 1
+            company_name = block_info[i+1+offset_num].strip()
+            duration = block_info[i+2+offset_num].strip()
+            start_from = block_info[i+3+offset_num].strip()
+            stop = block_info[i+4+offset_num].strip()
+            if b'stop' in stop:
+                stop_info = block_info[i+5+offset_num].strip()
+            else:
+                stop_info = None
+            
+            flight_info['company'] = company_name.decode()
+            flight_info['duration'] = duration.decode()
+            flight_info['stop'] = stop.decode()
+            if stop_info != None:
+                flight_info['stop_info'] = stop_info.decode()
+            else:
+                flight_info['stop_info'] = ''
         i +=1
 
     return flight_info
@@ -221,7 +255,8 @@ def analyze_one_file(filename):
         flight_info['dep_time'] as a string   ---departure time
         flight_info['arr_time'] as a string   ---arrival time
         flight_info['span_days'] as a int  ---flight span days, default 0
-        flight_info['stop_times'] as a int --- stop times, default 1        
+        flight_info['stop'] as a string --- n stop  or direct
+        flight_info['stop_info'] as a string --- stop information
     """
     global logger
     
@@ -290,7 +325,8 @@ def analyze_results_to_db(dir_name='results'):
             
             #Now move the file into backup directory
             cmd="mv "+f +" "+"backup/"
-#             os.system(cmd)
+            print(cmd)
+            os.system(cmd)
     finally:
         fdb.disconnectDB()
 

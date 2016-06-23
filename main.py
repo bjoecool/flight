@@ -37,10 +37,10 @@ logger_handle = None
 def start_task():
     global g_worker_num
     
-    max_task_num = 4
+    max_task_num = 2
 
     # create today's flight schedule and task
-    create_today_flight_schedule()
+    db.create_today_flight_schedule()
         
     mydb = db.FlightPlanDatabase()
     
@@ -88,8 +88,6 @@ def start_task():
             
             wait_tasks_finished(result_q, num_tasks)
             
-#             delete_tmp()
-
             time.sleep(10)
             
             break
@@ -136,23 +134,6 @@ def delete_tmp():
     logging.info("%s Function delete_tmp was invoked" %process_name)
     os.system("rm -rf /tmp/*")
     
-def create_today_flight_schedule():
-    fdb = db.FlightPlanDatabase()
-    try:
-        fdb.connectDB()
-        
-        start_date=datetime.date.today()+datetime.timedelta(1)
-        start_date_range=90
-        
-        fdb.add_one_group_flight_schedule(start_date,start_date_range)
-        
-        fdb.create_today_task()
-    
-        fdb.disconnectDB()
-
-    except db.DBError as err:
-        print("Error: %s" % str(err))
-        
 def init_log():
     """
     #Init the main logger
@@ -172,17 +153,9 @@ def init_log():
     main_logger.addHandler(logger_handle)
     main_logger.setLevel('INFO')
     
-    main_logger.debug('This is main log debug message')
-    main_logger.info("This is main log info message")
-    main_logger.warning('This is main log warning message')
-    
     worker_logger= logging.getLogger('[Worker]')
-    worker_logger.setLevel('DEBUG')
+    worker_logger.setLevel('INFO')
     worker_logger.addHandler(logger_handle)
-    
-    worker_logger.debug('This is worker log debug message')
-    worker_logger.info('This is worker log info message')
-    worker_logger.warning('This is worker log warning message')
     
     return main_logger
 

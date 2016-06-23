@@ -129,9 +129,6 @@ def execTask(task_q,result_q, stat_q,num,driver):
             worker_logger.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             print("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             
-            # Put the worker number into the stat queue
-            if num == 1:
-                time.sleep(1600)
             stat_q.put(num)
     finally:
 #         closeDriver(driver)
@@ -214,8 +211,6 @@ def init_log():
     #Init the main logger
     """
     global logger_handle
-    global main_logger
-    global worker_logger
     
     d = str(datetime.date.today())
     t1 = datetime.datetime.now()
@@ -230,17 +225,9 @@ def init_log():
     main_logger.addHandler(logger_handle)
     main_logger.setLevel('INFO')
     
-    main_logger.debug('This is main log debug message')
-    main_logger.info("This is main log info message")
-    main_logger.warning('This is main log warning message')
-    
     worker_logger= logging.getLogger('[Worker]')
-    worker_logger.setLevel('DEBUG')
+    worker_logger.setLevel('INFO')
     worker_logger.addHandler(logger_handle)
-    
-    worker_logger.debug('This is worker log debug message')
-    worker_logger.info('This is worker log info message')
-    worker_logger.warning('This is worker log warning message')
     
     return main_logger
 
