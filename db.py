@@ -290,7 +290,6 @@ class FlightPlanDatabase():
         This function add a group fligth schedule which start_date will be in 
         a list of start_date_list
         """
-        stay_days_range=90
         
         cur = self.conn.cursor()
         for i in range(0,start_date_range):
@@ -346,7 +345,7 @@ def create_today_flight_schedule():
         fdb.connectDB()
         
         start_date=datetime.date.today()+datetime.timedelta(1)
-        start_date_range=120
+        start_date_range=180   #Create 180 days data
         
         fdb.add_one_group_flight_schedule(start_date,start_date_range)
         

@@ -53,7 +53,6 @@ insert into airline values(nextval('airline_id'),8,3);
 insert into airline values(nextval('airline_id'),9,1);
 insert into airline values(nextval('airline_id'),9,2);
 insert into airline values(nextval('airline_id'),9,3);
-insert into airline values(nextval('airline_id'),9,4);
 
 
 select * from create_one_way_arilines(current_date+1,90);
