@@ -36,7 +36,8 @@ name varchar);
 CREATE TABLE city(
 id int4 primary key,
 name varchar,
-short_name varchar);
+short_name varchar,
+url_name text);
 
 ---- airline_company
 CREATE TABLE airline_company(

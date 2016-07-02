@@ -26,6 +26,25 @@ SELECT
 FROM flight,airline
 WHERE flight.airline_id = airline.id;
 
+
+DROP VIEW IF EXISTS flight_url_view;
+CREATE OR REPLACE VIEW flight_url_view AS 
+SELECT 
+    flight.id, 
+    get_city_url_name(airline.from_city) as from,
+    get_city_url_name(airline.to_city) as to,
+    get_trip_name(trip) as trip,
+    start_date,
+    stay_days,
+    adults,
+    children,
+    children_age as age,
+    get_cabinclass_name(flight.cabinclass) as class,
+    create_date
+FROM flight,airline
+WHERE flight.airline_id = airline.id;
+
+
 DROP VIEW IF EXISTS flight_price_view;
 CREATE OR REPLACE VIEW flight_price_view AS
 SELECT

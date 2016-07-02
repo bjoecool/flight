@@ -61,15 +61,15 @@ def closeDriver(driver):
 def runDriver(driver,url,id):
     global worker_logger
     
-    t1 = datetime.datetime.now()
+#     t1 = datetime.datetime.now()
     driver.get(url)
     ret = True
-    t2 = datetime.datetime.now()
-    tx = t2-t1
-    worker_logger.info("%s driver.get cost %d seconds for id[%d]" %(worker_name,tx.seconds,id))
+#     t2 = datetime.datetime.now()
+#     tx = t2-t1
+#     worker_logger.info("%s driver.get cost %d seconds for id[%d]" %(worker_name,tx.seconds,id))
     try:
         t1 = datetime.datetime.now()
-        time.sleep(15)
+        time.sleep(20)
         element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "feedbackAndImprovements")))
         t2 = datetime.datetime.now()
         tx = t2-t1
@@ -123,11 +123,9 @@ def execTask(task_q,result_q, stat_q,num,driver):
             
             result_q.put(flight_id)
             
-            flight = mydb.get_flight_by_id(flight_id)
+            req_url = mydb.get_flight_url_by_id(flight_id)
             mydb.update_status_in_flight_price_query_task_tbl(flight_id,1,search_date)
             
-            url_creater=url.ExpediaReqURL()
-            req_url = url_creater.createURL(**flight)
             worker_logger.info("%s send url : %s\n" %(worker_name,req_url))
             
             getFlightPrice(driver, req_url,flight_id, num)

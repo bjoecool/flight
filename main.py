@@ -28,7 +28,7 @@ import result
 import multiprocessing as mp
 import worker
 
-g_worker_num = 1
+g_worker_num = 4
 
 process_name='[main]'
 
@@ -37,7 +37,7 @@ logger_handle = None
 def start_task():
     global g_worker_num
     
-    max_task_num = 10
+    max_task_num = 1000
 
     # create today's flight schedule and task
     db.create_today_flight_schedule()

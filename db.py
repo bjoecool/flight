@@ -178,13 +178,52 @@ class FlightPlanDatabase():
         
         return flight
 
+    def get_flight_url_by_id(self, id):
+        req_url = None
+
+        cur = self.conn.cursor()
+        
+        try:
+            cur.execute('''select id,
+                        flight_url_view.from,
+                        flight_url_view.to,
+                        trip,
+                        start_date,
+                        stay_days,
+                        adults,
+                        children,
+                        age,
+                        class 
+                        from flight_url_view where id=%s''', (id,))
+            
+            tup = cur.fetchone()
+            flight={}
+            flight['id']=tup[0]
+            flight['from'] = tup[1]
+            flight['to'] = tup[2]
+            flight['trip'] = tup[3]
+            flight['start_date'] = tup[4]
+            flight['return_date'] = tup[4]
+            flight['stay_days'] = tup[5]
+            flight['adults'] = tup[6]
+            flight['children'] = tup[7]
+            flight['children_age'] = tup[8]
+            flight['cabinclass'] = tup[9]
+            
+            url_creater=url.ExpediaReqURL()
+            req_url = url_creater.createURL(**flight)
+        finally:
+            cur.close()
+        
+        return req_url
+
     def add_into_flight_price_tbl(self, flight_info):
         """
         Insert one result for flight price into flight_price table
         """
         cur = self.conn.cursor()
         
-        print('company --- %s' %flight_info['company'])
+#         print('company --- %s' %flight_info['company'])
         
         cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s)''',(flight_info['company'],))
         
@@ -217,12 +256,16 @@ class FlightPlanDatabase():
 
         cur = self.conn.cursor()
         try:
-            cur.execute('''DELETE FROM flight_price_query_task where execute_date<=current_date;''')
-            cur.execute('''insert into flight_price_query_task select id,0,current_date from flight where start_date>current_date;''')
-            self.conn.commit()
+            cur.execute('''DELETE FROM flight_price_query_task where execute_date<current_date;''')
             cur.execute('''SELECT count(*) from flight_price_query_task where execute_date=current_date;''')
             col = cur.fetchone()
-            total_task_num = col[0]
+            num = col[0]
+            if num<1:
+                cur.execute('''insert into flight_price_query_task select id,0,current_date from flight where start_date>current_date;''')
+                self.conn.commit()
+                cur.execute('''SELECT count(*) from flight_price_query_task where execute_date=current_date;''')
+                col = cur.fetchone()
+                total_task_num = col[0]
         finally:
             cur.close()
             return total_task_num            
@@ -381,7 +424,25 @@ def init_log():
     return main_logger
             
 def main():
-    create_today_flight_schedule()
+    init_log()
+#     create_today_flight_schedule()
+    test_get_flight_url_by_id()
+    
+
+def test_get_flight_url_by_id():
+    
+    fdb = FlightPlanDatabase()
+    try:
+        fdb.connectDB()
+        
+        for id in range(1,31):
+            req_url = fdb.get_flight_url_by_id(id)
+            print(req_url)
+
+    except DBError as err:
+        print("Error: %s" % str(err))
+    finally:
+        fdb.disconnectDB() 
 
 if __name__=='__main__':
     main()

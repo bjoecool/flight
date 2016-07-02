@@ -50,15 +50,7 @@ def print_flight_list(fdb, flight_id,search_date,flight_list):
         for key in flight_info.keys():
             print('\t%s -- %s' %(key,flight_info[key]))
         print('\n')
-#         print('Result[%d], %s' %(i,flight_info['price']))
-#         print('\tTime From %s - %s' %(flight_info['dep_time'],flight_info['arr_time']))
-#         print('\tCompany - %s' %flight_info['company'])
-#         print('\tspan_days %s' %flight_info['span_days'])
-# #         print('\tduration %s' %flight_info['duration'])
-#         print('\t%s stop' %flight_info['stop_times'])
-#         i +=1
-#         print('\n')
-            
+
     
     print('\n\n')
                 
@@ -292,10 +284,6 @@ def analyze_one_file(filename):
         
 #         num=1
         for block in block_list:
-#             print('[block%d] '% num)
-#             print(block)
-#             num +=1
-#             print('\n')
             flight_info = parse_block_info(block)
             if flight_info != None:
                 flight_info['id'] = flight_id
@@ -320,7 +308,7 @@ def analyze_results_to_db(dir_name='results'):
     try:
         for f in file_list:
             flight_id,search_date,flight_list = analyze_one_file(f)
-            print_flight_list(fdb,flight_id,search_date,flight_list)
+#             print_flight_list(fdb,flight_id,search_date,flight_list)
             update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
             
             #Now move the file into backup directory

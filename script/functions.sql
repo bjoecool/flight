@@ -23,6 +23,12 @@ $$
 SELECT name from city where id=$1;
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION get_city_url_name(id int4) returns varchar AS
+$$
+SELECT url_name from city where id=$1;
+$$ LANGUAGE SQL;
+
+
 ---- Function:  Input trip id and return trip name
 CREATE OR REPLACE FUNCTION get_trip_name(id int4) returns varchar AS
 $$
