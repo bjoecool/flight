@@ -301,7 +301,6 @@ class FlightPlanDatabase():
             if num > 0:
                 continue
             cur.execute('''select create_one_way_airlines(%s)''',(sd_str,))
-#            cur.execute('''select create_roundtrip_airlines(%s,%s)''',(sd_str,str(stay_days_range)))
             self.conn.commit()
         cur.close()
         

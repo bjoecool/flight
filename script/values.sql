@@ -9,7 +9,6 @@ insert into city values(1,'sydney', 'SYD');
 insert into city values(2,'melbourne', 'MEL');
 insert into city values(3,'brisbane','BNE');
 insert into city values(4,'perth','PER');
-
 insert into city values(5,'beijing','BJS');
 insert into city values(6,'shanghai','SHA');
 insert into city values(7,'guangzhou','CAN');
@@ -37,7 +36,6 @@ insert into airline values(nextval('airline_id'),3,6);
 insert into airline values(nextval('airline_id'),3,7);
 insert into airline values(nextval('airline_id'),3,8);
 insert into airline values(nextval('airline_id'),3,9);
-
 insert into airline values(nextval('airline_id'),5,1);
 insert into airline values(nextval('airline_id'),5,2);
 insert into airline values(nextval('airline_id'),5,3);
