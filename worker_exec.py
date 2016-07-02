@@ -83,7 +83,15 @@ def runDriver(driver,url,id):
         return ret
 
 def execTask(task_q,result_q, stat_q,num,driver):
-    """Execute task coming from the task_q squeue"""
+    """
+    Execute task coming from the task_q squeue.
+    Input Parameters:
+        task_q: The queue for the input task;
+        result_q: The queue for the worker return task state.
+        stat_q: The queue for the worker_monitor check the worker hearbeat.
+        num : type[int], the worker number.
+        driver: the web driver.
+    """
     global worker_name
     global worker_logger
     
@@ -110,7 +118,7 @@ def execTask(task_q,result_q, stat_q,num,driver):
             t1 = datetime.datetime.now()
             flight_id = d['data']
             search_date=d['date']
-            print("%s Start handle task with flight id %d" %(worker_name,flight_id))
+#             print("%s Start handle task with flight id %d" %(worker_name,flight_id))
             worker_logger.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
             
             result_q.put(flight_id)
@@ -127,7 +135,7 @@ def execTask(task_q,result_q, stat_q,num,driver):
             t2 = datetime.datetime.now()
             tx = t2-t1
             worker_logger.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
-            print("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
+#             print("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             
             stat_q.put(num)
     finally:
@@ -152,21 +160,40 @@ def get_flight_info_from_flight_module_element(flight_module_element):
     return price,company_name
     
 def getFlightPrice(driver, url, id, worker_num):
-    
+    """
+    This function send url to remote server and get the result.
+    Save the result into file.
+    Input parameter: 
+        dirver: The web driver.
+        url: type[string] . The url address.
+        id: type[int] The flight id.
+        worker_num: type[int] the worker number.
+    """
 #     flight_module_class_name='flight-module.segment.offer-listing'
+
         
     flight_id=str(id)
     
     re = Recorder(flight_id,recorder.RecorderMode.binary)
     
     if runDriver(driver,url,id)==True:
+        #Write the fight id.
         flight_id="<flight_id>"+flight_id
         re.writeN(flight_id)
+        
+        #Write the url
         re.write("<url>")
         re.writeN(url)
+        
+        #Write the search date
         t = datetime.datetime.now().strftime("%Y-%m-%d %H %M %S")
         search_date = "<search_date>"+t
         re.writeN(search_date)
+
+        #Write the worker number
+        re.write("<worker_num>")
+        re.writeN(str(worker_num))
+
           
         time.sleep(1)
         body_element = driver.find_element_by_tag_name('body')
