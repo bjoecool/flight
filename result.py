@@ -54,10 +54,10 @@ def print_flight_list(fdb, flight_id,search_date,flight_list):
     
     print('\n\n')
                 
-def update_flight_list_into_db(fdb, flight_id,search_date,flight_list):
+def update_flight_list_into_db(fdb, flight_id,search_date,flight_list,value):
     flight_list_len = len(flight_list)
     if flight_list_len > 0:
-        fdb.update_status_in_flight_price_query_task_tbl(flight_id, 2, search_date)
+        fdb.update_status_in_flight_price_query_task_tbl(flight_id, value, search_date)
 
         for flight_info in flight_list:
             fdb.add_into_flight_price_tbl(flight_info)
@@ -252,50 +252,57 @@ def analyze_one_file(filename):
     """
     global logger
     
-    flight_id="None"
+    flight_id=None
     search_date="None"
     flight_list=[]
     
-    t1 = datetime.datetime.now()
+    try:
+        t1 = datetime.datetime.now()
+    
+        with open(filename,'rb') as f:
+            # get flight_id
+            line = f.readline().strip()
+            if len(line)>0:
+                if line.find(b"<flight_id>") != -1:
+                    if line[-1] == b'\n':
+                        line=line[0:-1]
+                    flight_id=line[len("<flight_id>"):].decode()
+                    
+            # get the url
+            line = f.readline()
+            
+            # get search_date
+            line = f.readline().strip()
+            if len(line)>0:
+                if line.find(b"<search_date>") != -1:
+                    if line[-1] == b'\n':
+                        line=line[0:-1]
+                    search_date=line[len(b"<search_date>"):].decode()
+                    search_date = search_date.split(' ')[0]
+            
+            # Now get the flight list
+            block_list = get_block_list(f.readlines())
+            
+    #         num=1
+            for block in block_list:
+                flight_info = parse_block_info(block)
+                if flight_info != None:
+                    flight_info['id'] = flight_id
+                    flight_info['search_date'] = search_date
+                    flight_list.append(flight_info)
+            
+        t2 = datetime.datetime.now()
+        tx = t2-t1
+        flight_list_len = len(flight_list)
+        logger.info("[result] %s [%s] --- result number %d, cost seconds %d" %(filename, flight_id,flight_list_len,tx.seconds))
+    except Exception as e:
+#         print('Error happened when analyze file %s, the %s',filename, e.value)
+        flight_id = None
+        logger.error("Error happened in analyzing %s,Error is: %s " %(filename, e))
+        print("Error happened in analyzing %s,Error is: %s " %(filename, e))
 
-    with open(filename,'rb') as f:
-        # get flight_id
-        line = f.readline().strip()
-        if len(line)>0:
-            if line.find(b"<flight_id>") != -1:
-                if line[-1] == b'\n':
-                    line=line[0:-1]
-                flight_id=line[len("<flight_id>"):].decode()
-                
-        # get the url
-        line = f.readline()
-        
-        # get search_date
-        line = f.readline().strip()
-        if len(line)>0:
-            if line.find(b"<search_date>") != -1:
-                if line[-1] == b'\n':
-                    line=line[0:-1]
-                search_date=line[len(b"<search_date>"):].decode()
-                search_date = search_date.split(' ')[0]
-        
-        # Now get the flight list
-        block_list = get_block_list(f.readlines())
-        
-#         num=1
-        for block in block_list:
-            flight_info = parse_block_info(block)
-            if flight_info != None:
-                flight_info['id'] = flight_id
-                flight_info['search_date'] = search_date
-                flight_list.append(flight_info)
-        
-    t2 = datetime.datetime.now()
-    tx = t2-t1
-    flight_list_len = len(flight_list)
-    logger.info("[result] %s [%s] --- result number %d, cost seconds %d" %(f, flight_id,flight_list_len,tx.seconds))
-
-    return flight_id,search_date,flight_list
+    finally:
+        return flight_id,search_date,flight_list
 
 def analyze_results_to_db(dir_name='results'):
     """
@@ -308,13 +315,15 @@ def analyze_results_to_db(dir_name='results'):
     try:
         for f in file_list:
             flight_id,search_date,flight_list = analyze_one_file(f)
-#             print_flight_list(fdb,flight_id,search_date,flight_list)
-            update_flight_list_into_db(fdb,flight_id,search_date,flight_list)
+            if flight_id!=None:
+#                 print_flight_list(fdb,flight_id,search_date,flight_list)
+                update_flight_list_into_db(fdb,flight_id,search_date,flight_list,2)
+                cmd="mv "+f +" "+"backup/"
+                print(cmd)
+                os.system(cmd)
+            else:
+                update_flight_list_into_db(fdb,flight_id,search_date,flight_list,0)
             
-            #Now move the file into backup directory
-            cmd="mv "+f +" "+"backup/"
-            print(cmd)
-            os.system(cmd)
     finally:
         fdb.disconnectDB()
 
