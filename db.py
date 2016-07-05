@@ -224,29 +224,34 @@ class FlightPlanDatabase():
         cur = self.conn.cursor()
         
 #         print('company --- %s' %flight_info['company'])
+        try:
         
-        cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s)''',(flight_info['company'],))
-        
-        
-        company_tuple=cur.fetchone()
-        company_id=company_tuple[0]
-        
-        cur.execute('''INSERT INTO flight_price 
-                       (flight_id,price,company_id,departure_time,arrival_time,duration,span_days,stop,stop_info,search_date)
-                        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);''',
-                        (flight_info['id'],
-                         flight_info['price'],
-                         company_id,
-                         flight_info['dep_time'],
-                         flight_info['arr_time'],
-                         flight_info['duration'],
-                         flight_info['span_days'],
-                         flight_info['stop'],
-                         flight_info['stop_info'],
-                         flight_info['search_date']))
-        
-        self.conn.commit()
-        cur.close()
+            cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s)''',(flight_info['company'],))
+            
+            
+            company_tuple=cur.fetchone()
+            company_id=company_tuple[0]
+            
+            cur.execute('''INSERT INTO flight_price 
+                           (flight_id,price,company_id,departure_time,arrival_time,duration,span_days,stop,stop_info,search_date)
+                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);''',
+                            (flight_info['id'],
+                             flight_info['price'],
+                             company_id,
+                             flight_info['dep_time'],
+                             flight_info['arr_time'],
+                             flight_info['duration'],
+                             flight_info['span_days'],
+                             flight_info['stop'],
+                             flight_info['stop_info'],
+                             flight_info['search_date']))
+            
+            self.conn.commit()
+        except Exception as e:
+            print('db error in add_into_flight_price_tbl: %s' %e)
+                
+        finally:
+            cur.close()
             
     def create_today_task(self):
         """
@@ -425,8 +430,8 @@ def init_log():
             
 def main():
     init_log()
-#     create_today_flight_schedule()
-    test_get_flight_url_by_id()
+    create_today_flight_schedule()
+#     test_get_flight_url_by_id()
     
 
 def test_get_flight_url_by_id():

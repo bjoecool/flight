@@ -37,7 +37,7 @@ logger_handle = None
 def start_task():
     global g_worker_num
     
-    max_task_num = 1000
+    max_task_num = 5400
 
     # create today's flight schedule and task
     db.create_today_flight_schedule()
