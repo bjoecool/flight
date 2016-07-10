@@ -92,3 +92,4 @@ ENV/
 results/
 backup/
 log/
+failure/

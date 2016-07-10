@@ -304,7 +304,7 @@ class FlightPlanDatabase():
         """
         cur = self.conn.cursor()
         cur.execute('''Select flight_id from flight_price_query_task 
-                        where execute_date=current_date and status = 0 
+                        where execute_date=current_date and status <> 2 
                         order by flight_id limit %s;''',(limit_number,))
 
         task_list=[]
