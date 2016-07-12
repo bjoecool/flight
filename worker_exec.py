@@ -69,7 +69,7 @@ def runDriver(driver,url,id):
 #     worker_logger.info("%s driver.get cost %d seconds for id[%d]" %(worker_name,tx.seconds,id))
     try:
         t1 = datetime.datetime.now()
-        time.sleep(20)
+        time.sleep(15)
         element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "feedbackAndImprovements")))
         t2 = datetime.datetime.now()
         tx = t2-t1
