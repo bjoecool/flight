@@ -28,6 +28,7 @@ import result
 import multiprocessing as mp
 import worker
 
+main_logger=None
 g_worker_num = 4
 
 process_name='[main]'
@@ -36,6 +37,7 @@ logger_handle = None
 
 def start_task():
     global g_worker_num
+    global main_logger
     
     max_task_num = 5400
 
@@ -51,8 +53,8 @@ def start_task():
     i = 0
     total_tasks = 0
     
-#     result_p = start_handle_result_process()
-#     result_p.start()
+    result_p = start_handle_result_process()
+    result_p.start()
 
     wkm = worker.WorkerMonitor()
     
@@ -84,7 +86,7 @@ def start_task():
                 task_q.put(d)
                 i +=1
     
-            logging.info("%s Put total %d task into queue" %(process_name,num_tasks))
+            main_logger.info("%s Put total %d task into queue" %(process_name,num_tasks))
             
             wait_tasks_finished(result_q, num_tasks)
             
@@ -92,13 +94,13 @@ def start_task():
             
             break
     except Exception as err:
-        logging.info("%s In start_task error happened: %s" %str(err))
+        main_logger.info("%s In start_task error happened: %s" %str(err))
     finally:
-        logging.info("%s Total tasks %d has been executed" %(process_name,total_tasks))
+        main_logger.info("%s Total tasks %d has been executed" %(process_name,total_tasks))
         
         time.sleep(10)
         
-        logging.info("%s Stop the handle result process" %process_name)
+        main_logger.info("%s Stop the handle result process" %process_name)
 
         #Send EXIT command to workers
         for i in range(g_worker_num):
@@ -110,9 +112,10 @@ def start_task():
         print("Waiting 30 seconds for workers finishing their final works")                       
         time.sleep(30)
                         
-        wkm.stop_monitor()
         wkm.stop_workers()
+        wkm.stop_monitor()
         mydb.disconnectDB()
+        result_p.join()
 
 def wait_tasks_finished(result_q, total_task_num):
     task_num = 0
@@ -126,12 +129,14 @@ def wait_tasks_finished(result_q, total_task_num):
             break
 
 def start_handle_result_process():
-    p = mp.Process(target=result.analyze_results, args=())
+    p = mp.Process(target=result.schedule_results_analyze, args=('results',60))
     
     return p
     
 def delete_tmp():
-    logging.info("%s Function delete_tmp was invoked" %process_name)
+    global main_logger
+    
+    main_logger.info("%s Function delete_tmp was invoked" %process_name)
     os.system("rm -rf /tmp/*")
     
 def init_log():
@@ -165,6 +170,8 @@ def close_log():
     logger_handle.close()
         
 def main():
+    global main_logger
+    
     print("Start the main function")
 
     t1 = datetime.datetime.now()
