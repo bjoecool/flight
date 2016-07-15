@@ -177,6 +177,7 @@ def main():
     t1 = datetime.datetime.now()
     
     main_logger = init_log()
+    result.init_log()
     
     start_task()
        

@@ -294,7 +294,7 @@ def analyze_one_file(filename):
         t2 = datetime.datetime.now()
         tx = t2-t1
         flight_list_len = len(flight_list)
-        logger.info("[result] %s [%s] --- result number %d, cost seconds %d" %(filename, flight_id,flight_list_len,tx.seconds))
+        logger.info("%s [%s] --- result number %d, cost seconds %d" %(filename, flight_id,flight_list_len,tx.seconds))
     except Exception as e:
 #         print('Error happened when analyze file %s, the %s',filename, e.value)
         flight_id = None
@@ -327,18 +327,22 @@ def analyze_results_to_db(dir_name='results'):
     finally:
         fdb.disconnectDB()
 
-def schedule_results_analyze(dir_name='results', interval_time=60):
+def schedule_results_analyze(dir_name='results', interval_time=10):
     """
     This function start a task to analyze the results in the dir_name
     by invoking the analyze_results at a interval_time.
     interval_time --- how many seconds the function start a task
     """
     print("Start schedule_results_analyze")
-    while True:
-        time.sleep(interval_time)
-        analyze_results_to_db(dir_name)
-                
-def main():
+    try:
+        while 1:
+            analyze_results_to_db(dir_name)
+            time.sleep(interval_time)
+            
+    finally:
+        print("End schedule_results_analyze")
+
+def init_log():
     global logger
     
     d = str(datetime.date.today())
@@ -362,11 +366,17 @@ def main():
     
     #Set level
     logger.setLevel('INFO')
-    
-    analyze_results_to_db()
-    
+
 #     logger_handle.emit()
     logger_handle.close()
+                
+def main():
+
+    init_log()
+    
+#     analyze_results_to_db()
+    schedule_results_analyze()
+    
 
 def test():
     flight_tup = analyze_one_file('results/res_20160602_168183.txt')
