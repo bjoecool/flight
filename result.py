@@ -333,6 +333,7 @@ def schedule_results_analyze(dir_name='results', interval_time=60):
     by invoking the analyze_results at a interval_time.
     interval_time --- how many seconds the function start a task
     """
+    print("Start schedule_results_analyze")
     while True:
         time.sleep(interval_time)
         analyze_results_to_db(dir_name)
