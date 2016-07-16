@@ -319,7 +319,7 @@ def analyze_results_to_db(dir_name='results'):
 #                 print_flight_list(fdb,flight_id,search_date,flight_list)
                 update_flight_list_into_db(fdb,flight_id,search_date,flight_list,2)
                 cmd="mv "+f +" "+"backup/"
-                print(cmd)
+#                 print(cmd)
                 os.system(cmd)
             else:
                 update_flight_list_into_db(fdb,flight_id,search_date,flight_list,0)
@@ -374,8 +374,8 @@ def main():
 
     init_log()
     
-#     analyze_results_to_db()
-    schedule_results_analyze()
+    analyze_results_to_db()
+#     schedule_results_analyze()
     
 
 def test():
