@@ -115,7 +115,7 @@ def start_task():
         wkm.stop_workers()
         wkm.stop_monitor()
         mydb.disconnectDB()
-        result_p.join()
+        result_p.terminate()
 
 def wait_tasks_finished(result_q, total_task_num):
     task_num = 0
@@ -177,6 +177,7 @@ def main():
     t1 = datetime.datetime.now()
     
     main_logger = init_log()
+    result.init_log()
     
     start_task()
        
