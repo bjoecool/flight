@@ -51,6 +51,7 @@ class WorkerMonitor():
         self.stat_q = None
         self.handle = None
         self.worker_list = []
+        self.log = logging.getLogger('[Worker]')
         
     def create_queue(self):
         self.task_q = mp.Queue()
@@ -59,7 +60,7 @@ class WorkerMonitor():
         return (self.task_q,self.result_q)
         
     def start_monitor(self):
-        print("Enter into start_monitor")
+        self.log.info("Enter into start_monitor")
         if self.handle != None:
             return (None,None)
         
@@ -69,10 +70,10 @@ class WorkerMonitor():
             p.start()
         except Exception as err:
             self.handle = None
-            print("WorkerMonitor start failed, reason : %s " %str(err))
+            self.log.error("WorkerMonitor start failed, reason : %s " %str(err))
             
     def stop_monitor(self):
-        print("Enter into stop_monitor")
+        self.log.info("Enter into stop_monitor")
         if self.handle != None:
             self.handle.terminate()
             self.handle=None
@@ -100,7 +101,7 @@ class WorkerMonitor():
     
 class Worker():
     def __init__(self, num, task_q, result_q, stat_q):
-        print("Enter worker init")
+        
         self.num = num
         self.task_q = task_q   #The queue to receive the command and task
         self.stat_q = stat_q  #The queue to check the worker status
@@ -109,14 +110,15 @@ class Worker():
         self.handle = None
         self.no_heartbeat_times=0
         self.driver = None
+        self.log = logging.getLogger('[Worker]')
+        self.log.info("Enter worker init")
         
     def getWorkersNum(self):
         return self.num
     
     def start(self):
-        print("enter worker.start")
         try:
-            print("Creating worker process")
+            self.log.info("Creating worker process")
             self.driver = wke.createDriver()
             p = mp.Process(target=wke.execTask, args=(self.task_q, self.result_q, self.stat_q, self.num,self.driver))
             self.handle = p
@@ -125,13 +127,13 @@ class Worker():
             p.start()
         except Exception as err:
             self.handle = None
-            print("Worker[%d] start failed, reason : %s " %(self.num,str(err)))
+            self.log.error("Worker[%d] start failed, reason : %s " %(self.num,str(err)))
             return -1
 
         return 1
     
     def terminate(self):
-        print("Worker[%d] is terminated" %self.num)
+        self.log.info("Worker[%d] is terminated" %self.num)
         if self.driver != None:
             self.driver.quit()
             self.driver = None
@@ -151,7 +153,7 @@ def monitor_exec(worker_list,stat_q):
     process_name='[monitor_exec]'
     main_logger=logging.getLogger('[Main]')
     
-    print("Enter into %s" %process_name)
+    main_logger.info("Enter into %s" %process_name)
     if len(worker_list) == 0:
         return;
     
@@ -175,7 +177,7 @@ def monitor_exec(worker_list,stat_q):
         for wk in worker_list:
             if wk.num == num:
                 wk.no_heartbeat_times=0
-                main_logger.info("%s Received heartbeat from worker[%d]" %(process_name,num))
+#                 main_logger.info("%s Received heartbeat from worker[%d]" %(process_name,num))
         
                 
 def test(url,id):

@@ -333,14 +333,16 @@ def schedule_results_analyze(dir_name='results', interval_time=10):
     by invoking the analyze_results at a interval_time.
     interval_time --- how many seconds the function start a task
     """
-    print("Start schedule_results_analyze")
+    global logger
+    
+    logger.info("Start schedule_results_analyze")
     try:
         while 1:
             analyze_results_to_db(dir_name)
             time.sleep(interval_time)
             
     finally:
-        print("End schedule_results_analyze")
+        logger.info("End schedule_results_analyze")
 
 def init_log():
     global logger

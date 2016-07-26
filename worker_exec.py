@@ -138,7 +138,8 @@ def execTask(task_q,result_q, stat_q,num,driver):
             stat_q.put(num)
     finally:
 #         closeDriver(driver)
-        logging.info(worker_name+" exited")
+        worker_logger.info(worker_name+" exited")
+        print(worker_name, " exited")
 
 def get_flight_info_from_flight_module_element(flight_module_element):
     """

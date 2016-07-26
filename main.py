@@ -26,7 +26,9 @@ import datetime
 import result
 
 import multiprocessing as mp
-import worker
+
+from pyvirtualdisplay import Display
+
 
 main_logger=None
 g_worker_num = 4
@@ -39,7 +41,9 @@ def start_task():
     global g_worker_num
     global main_logger
     
-    max_task_num = 5400
+    main_logger.info("Enter the start_task function")
+    
+    max_task_num = 7
 
     # create today's flight schedule and task
     db.create_today_flight_schedule()
@@ -70,10 +74,10 @@ def start_task():
             
             total_tasks += num_tasks 
             
-            print("Starting workers")
+            main_logger.info("Starting workers")
             wkm.start_workers(g_worker_num)
             
-            print("Starting worker monitor")
+            main_logger.info("Starting worker monitor")
             wkm.start_monitor()
                         
             t1 = datetime.datetime.now()
@@ -109,7 +113,7 @@ def start_task():
             task_q.put(d)
 
         #Wait workers exit
-        print("Waiting 30 seconds for workers finishing their final works")                       
+        main_logger.info("Waiting 30 seconds for workers finishing their final works")                       
         time.sleep(30)
                         
         wkm.stop_workers()
@@ -129,6 +133,7 @@ def wait_tasks_finished(result_q, total_task_num):
             break
 
 def start_handle_result_process():
+    main_logger.info('Invoking the result.schedule_results_analyze function')
     p = mp.Process(target=result.schedule_results_analyze, args=('results',60))
     
     return p
@@ -174,10 +179,16 @@ def main():
     
     print("Start the main function")
 
+    os.chdir('/db/github/flight')
+        
+    display = Display(visible=0, size=(1024,768))
+    display.start()
+
     t1 = datetime.datetime.now()
     
     main_logger = init_log()
     result.init_log()
+    main_logger.info("\n\n*************************************Start the main function*************************************\n")
     
     start_task()
        
@@ -186,7 +197,10 @@ def main():
     
     main_logger.info("Total cost time is %d seconds" %tx.seconds)
 
-    main_logger.info("Exit the main function")
+    main_logger.info("\n*************************************Exit the main function*************************************\n")
+    
+    display.stop()
+    
     print("Exit the main function")
     
 if __name__=='__main__':
