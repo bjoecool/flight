@@ -21,11 +21,34 @@ import os
 import time
 import logging
 import datetime
+import multiprocessing as mp
+
+
+def worker_run(worker_number, sleep_time):
+    
+    logging.info('worker [%d] started!' % worker_number)
+    
+    time.sleep(sleep_time)
+    
+    logging.info('worker [%d] existed!' % worker_number)
 
 def test():
+    os.chdir('/db2/github/flight')
     logging.basicConfig(filename='log/test.log',format='%(levelname)s:%(asctime)s %(message)s', level=logging.INFO)
     
-    logging.info('Start today test now!')
+    logging.info('Enter into test function!')
+    
+    wk1 = mp.Process(target=worker_run, args=(1,4))
+    wk2 = mp.Process(target=worker_run, args=(2,2))
+    
+    wk1.start()
+    wk2.start()
+    
+    
+    wk1.join()
+    wk2.join()
+    
+    logging.info('Exit test function!')
         
 def main():
     test()

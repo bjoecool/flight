@@ -1,7 +1,7 @@
 
 
 DROP FUNCTION create_one_way_arilines(range int4);
-DROP FUNCTION create_roundtrip_arilines(range int4,stay_days_range int4);
+DROP FUNCTION create_roundtrip_airlines(range int4,stay_days_range int4);
 
 DROP FUNCTION create_one_way_airlines(start_date date);
 DROP FUNCTION create_roundtrip_airlines(start_date date,stay_days_range int4);
@@ -99,7 +99,7 @@ BEGIN
 END;
 $$LANGUAGE PLPGSQL;
 
----- Function: create_roundtrip_arilines
+---- Function: create_roundtrip_airlines
 -- range is the start_date range. 
 -- stay_days_range is for the range of stay_days from 1 to this value;
 CREATE OR REPLACE FUNCTION create_roundtrip_airlines(start_date date,stay_days_range int4) returns int8 AS

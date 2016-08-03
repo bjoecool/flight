@@ -53,6 +53,6 @@ insert into airline values(nextval('airline_id'),9,2);
 insert into airline values(nextval('airline_id'),9,3);
 
 
-select * from create_one_way_arilines(current_date+1,90);
+--select * from create_one_way_airlines(current_date+1);
 
-select * from create_roundtrip_arilines(current_date+1,90,180);
+--select * from create_roundtrip_airlines(current_date+1,90);
