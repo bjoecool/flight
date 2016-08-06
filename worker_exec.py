@@ -49,9 +49,9 @@ proxy = Proxy({
     })
 
 def createDriver():
-#    driver = webdriver.Firefox(proxy=proxy)
+    driver = webdriver.Firefox(proxy=proxy)
     
-    driver = webdriver.Firefox()
+#    driver = webdriver.Firefox()
     return driver
 
 def closeDriver(driver):
