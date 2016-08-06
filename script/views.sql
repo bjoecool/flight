@@ -81,3 +81,26 @@ SELECT
     company,
     date as search_date 
 FROM flight_view JOIN flight_price_view ON id=flight_id;
+
+
+CREATE OR REPLACE VIEW flight_detail_price_view AS
+SELECT
+    f.from,
+    f.to, 
+    f.trip,
+    start_date,
+    stay_days,
+    departure_time,
+    arrival_time,
+    span_days,
+    duration,
+    stop,
+    stop_info,
+    rate,
+    adults,
+    class,
+    price,
+    get_company_name(company_id) as company,
+    p.search_date as search_date
+FROM flight_view as f JOIN flight_price as p on id=flight_id order by search_date;
+    
