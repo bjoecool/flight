@@ -79,25 +79,26 @@ def reuqest_one_flight(departure_date):
     file_name='results/'+departure_date.strftime('%Y-%m-%d')+'.txt'
     print(file_name)
     
-    r = requests.get(url,proxies=proxies)
+    r = requests.get(url)
+#     r = requests.get(url,proxies=proxies)
 #     print(type(r.text))
 #     ret_list=r.text.split('\n')
 #     print(len(ret_list))
 #           
     json_url = get_json_url(r.content)
     
-    r = requests.get(json_url,proxies=proxies)
+    r = requests.get(json_url)
     
     print(r.status_code)
     
     with open(file_name,'wb') as f:
         ret = r.content
-        ret = ret.replace(b'}',b'}\n')
+#         ret = ret.replace(b'}',b'}\n')
         f.write(ret)
     
 def test():
     
-    for i in range(1,10):
+    for i in range(1,2):
         reuqest_one_flight(date(2016,9,i))
     
 
