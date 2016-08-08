@@ -20,6 +20,14 @@ import sys
 import time
 import json
 
+flight_info_keys=["index","price","price_code","dep_time","arr_time","duration","stop","stop_info","company"]
+
+def print_fligth_info(flight_info):
+    for key in flight_info_keys:
+#         print(key,end=' : ')
+        print(flight_info[key],end="\t")
+    
+    print("")
 
 def parse_timeline_array(timeline_list):
     """
@@ -36,7 +44,7 @@ def parse_timeline_array(timeline_list):
     """
     timeline_info = dict()
     carriers = []
-    stop_details = ""
+    stop_details = None
     try:
         for t in timeline_list:
             if t["segment"]==True:
@@ -50,10 +58,16 @@ def parse_timeline_array(timeline_list):
                 hour=t["duration"]["hours"]
                 minutes=t["duration"]["minutes"]
                 du=str(hour)+"h"+str(minutes)+"m"
-                stop_details =stop_details+city+"("+code+")"+":"+du+";"
+                if stop_details == None:
+                    stop_details = city+"("+code+")"+":"+du
+                else:
+                    stop_details =stop_details+";"+city+"("+code+")"+":"+du
                 
         timeline_info["carriers"]=carriers
-        timeline_info["stop_details"]=stop_details
+        if stop_details == None:
+            timeline_info["stop_details"]=""
+        else:
+            timeline_info["stop_details"]=stop_details
     except Exception as inst:
         print("Error happen in parse_timeline_array", inst)
         timeline_info=None
@@ -80,15 +94,28 @@ def parse_one_leg_obj(obj):
         
         
         flight_info["index"]=obj["identity"]["index"]
-#         flight_info["company"] =carrierSummary_obj["airlineName"]
         flight_info["airline_codes"]=carrierSummary_obj["airlineCodes"]
-        flight_info["dep"] =  departureTime_obj["isoStr"]
-        flight_info["arr"] =  arrivalTime_obj["isoStr"]
+        flight_info["dep_time"] =  departureTime_obj["isoStr"]
+        flight_info["arr_time"] =  arrivalTime_obj["isoStr"]
         flight_info["price"] = price_obj["formattedPrice"]
-        flight_info["price_currencyCode"] = price_obj["currencyCode"]
+        flight_info["price_code"] = price_obj["currencyCode"]
         flight_info["duration"] = str(duration_obj["hours"])+"h"+str(duration_obj["minutes"])+"m"
-        flight_info["stops"] = obj["stops"]
-        flight_info["timeline_info"] = parse_timeline_array(timeline_array)
+        flight_info["stop"] = obj["stops"]
+        timeline_info = parse_timeline_array(timeline_array)
+        flight_info["stop_info"] = timeline_info["stop_details"]
+        
+        company = None
+        ### Only get the first name because the database only support one now,
+        ### Later consider support multiple company name
+        for carrier in timeline_info["carriers"]:
+            company = carrier["airline_name"]
+#             if company == None:
+#                 company = carrier["airline_name"]
+#             else:
+#                 company = company+";"+carrier["airline_name"]
+        
+        flight_info["company"] = company 
+        
     except Exception as inst:
         print("Error happened in parse_one_leg_obj", inst)
         print(inst)
@@ -96,27 +123,43 @@ def parse_one_leg_obj(obj):
         
     finally:
         return flight_info
-    
-def test(file_name):
+
+def parse_one_file(file_name):
     flight_list=[]
     
     with open(file_name) as f:
         line=f.readline()
         s1 = json.loads(line)
-#         print(type(s1))
         legs = s1["content"]["legs"]
-        print("Total keys is %d" %len(legs.keys()))
         for key in legs.keys():
-            print(key)
             leg_obj = legs[key]
             flight_info = parse_one_leg_obj(leg_obj)
-            print(flight_info)
-            break
-             
-    
+            flight_list.append(flight_info)
+
+    return flight_list
+
+# def test(file_name):
+#     flight_list=[]
+#     
+#     with open(file_name) as f:
+#         line=f.readline()
+#         s1 = json.loads(line)
+#         legs = s1["content"]["legs"]
+#         print("Total keys is %d" %len(legs.keys()))
+#         for key in legs.keys():
+#             print(key)
+#             leg_obj = legs[key]
+#             flight_info = parse_one_leg_obj(leg_obj)
+#             flight_list.append(flight_info)
+#              
+#     return flight_list
 
 def main():
-    test('results/2016-09-01.txt')
+#     test('results/2016-09-01.txt')
+    flight_list = parse_one_file('ret/2016-09-02.txt')
+    
+    for flight_info in flight_list:
+        print_fligth_info(flight_info)
 
 if __name__=='__main__':
     main()

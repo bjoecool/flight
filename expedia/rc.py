@@ -19,6 +19,7 @@
 import sys
 import time
 from datetime import date
+from datetime import datetime
 from datetime import timedelta
 import requests
 
@@ -54,19 +55,23 @@ passengers=children:0,adults:1,seniors:0,infantinlap:Y&mode=search'''
         
     return url_list     
 
+def get_departure_date(base_date,days):
+    """
+    Get the dep date by base_date+days.
+    """
+    dep_date= base_date+timedelta(days=days)
+    
+    return dep_date
+
 def get_json_url(content):
     content_list=content.split(b'\n')
-    print(len(content_list))
     for line in content_list:
         if line.find(b'originalContinuationId')!=-1:
             line = line.strip()
             s = line.split(b'>')[1]
             s = s.split(b'<')[0]
             s = s.decode()
-            print(s)
-            print(line)
             url = '''https://www.expedia.com.au/Flight-Search-Paging?c={0}&is=1&sp=asc&cz=200&cn=0 HTTP/1.1'''.format(s)
-            print(url)
             return url
 
 def reuqest_one_flight(departure_date):
@@ -75,31 +80,36 @@ def reuqest_one_flight(departure_date):
     """
     dep_date = departure_date.strftime('%d/%m/%Y')
     url = url_temp.format(dep_date)
-    print(url)
-    file_name='results/'+departure_date.strftime('%Y-%m-%d')+'.txt'
-    print(file_name)
+
+    file_name='ret/'+departure_date.strftime('%Y-%m-%d')+'.txt'
     
-    r = requests.get(url)
-#     r = requests.get(url,proxies=proxies)
-#     print(type(r.text))
-#     ret_list=r.text.split('\n')
-#     print(len(ret_list))
-#           
+    r = requests.get(url,proxies=proxies)
+           
     json_url = get_json_url(r.content)
     
-    r = requests.get(json_url)
+    r = requests.get(json_url,proxies=proxies)
     
-    print(r.status_code)
-    
-    with open(file_name,'wb') as f:
-        ret = r.content
-#         ret = ret.replace(b'}',b'}\n')
-        f.write(ret)
+    if r.status_code==200:
+        with open(file_name,'wb') as f:
+            ret = r.content
+    #         ret = ret.replace(b'}',b'}\n')
+            f.write(ret)
+            print("Created file %s" %file_name)
+    else:
+        print("Get %d code for json_url:%s" %(r.status_code,json_url))
     
 def test():
+    t1 = datetime.now()
     
-    for i in range(1,2):
-        reuqest_one_flight(date(2016,9,i))
+    for i in range(0,50):
+        dep_date = get_departure_date(date(2016,10,1),i)
+        reuqest_one_flight(dep_date)
+        
+    t2 = datetime.now()
+    
+    tx = t2 - t1
+    
+    print("Total cost time is %d seconds" %tx.seconds)
     
 
 def main():
