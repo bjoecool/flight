@@ -55,6 +55,9 @@ def print_flight_list(fdb, flight_id,search_date,flight_list):
     print('\n\n')
                 
 def update_flight_list_into_db(fdb, flight_id,search_date,flight_list,value):
+    if flight_id == None or search_date == None:
+        return
+    
     flight_list_len = len(flight_list)
     if flight_list_len > 0:
         fdb.update_status_in_flight_price_query_task_tbl(flight_id, value, search_date)
@@ -253,8 +256,9 @@ def analyze_one_file(filename):
     global logger
     
     flight_id=None
-    search_date="None"
+    search_date=None
     flight_list=[]
+    ret = True
     
     try:
         t1 = datetime.datetime.now()
@@ -297,12 +301,11 @@ def analyze_one_file(filename):
         logger.info("%s [%s] --- result number %d, cost seconds %d" %(filename, flight_id,flight_list_len,tx.seconds))
     except Exception as e:
 #         print('Error happened when analyze file %s, the %s',filename, e.value)
-        flight_id = None
+        ret = False
         logger.error("Error happened in analyzing %s,Error is: %s " %(filename, e))
         print("Error happened in analyzing %s,Error is: %s " %(filename, e))
-
     finally:
-        return flight_id,search_date,flight_list
+        return ret,flight_id,search_date,flight_list
 
 def analyze_results_to_db(dir_name='results'):
     """
@@ -312,20 +315,23 @@ def analyze_results_to_db(dir_name='results'):
     file_list = get_all_files(dir_name)
     fdb = db.FlightPlanDatabase()
     fdb.connectDB()
-    try:
-        for f in file_list:
-            flight_id,search_date,flight_list = analyze_one_file(f)
-            if flight_id!=None:
+    for f in file_list:
+        try:
+            ret, flight_id,search_date,flight_list = analyze_one_file(f)
+            if ret==True:
 #                 print_flight_list(fdb,flight_id,search_date,flight_list)
                 update_flight_list_into_db(fdb,flight_id,search_date,flight_list,2)
                 cmd="mv "+f +" "+"backup/"
                 print(cmd)
                 os.system(cmd)
             else:
-                update_flight_list_into_db(fdb,flight_id,search_date,flight_list,0)
-            
-    finally:
-        fdb.disconnectDB()
+                update_flight_list_into_db(fdb,flight_id,search_date,[],0)
+        except Exception as e:
+            logger.error("Error happened in analyze_results_to_db %s,Error is: %s " %(f, e))
+        finally:
+            continue
+
+    fdb.disconnectDB()
 
 def schedule_results_analyze(dir_name='results', interval_time=10):
     """
