@@ -315,23 +315,18 @@ def analyze_results_to_db(dir_name='results'):
     file_list = get_all_files(dir_name)
     fdb = db.FlightPlanDatabase()
     fdb.connectDB()
-    for f in file_list:
-        try:
+    try:
+        for f in file_list:
             ret, flight_id,search_date,flight_list = analyze_one_file(f)
             if ret==True:
-#                 print_flight_list(fdb,flight_id,search_date,flight_list)
                 update_flight_list_into_db(fdb,flight_id,search_date,flight_list,2)
-                cmd="mv "+f +" "+"backup/"
-                print(cmd)
-                os.system(cmd)
             else:
                 update_flight_list_into_db(fdb,flight_id,search_date,[],0)
-        except Exception as e:
-            logger.error("Error happened in analyze_results_to_db %s,Error is: %s " %(f, e))
-        finally:
-            continue
-
-    fdb.disconnectDB()
+            cmd="mv "+f +" "+"backup/"
+            print(cmd)
+            os.system(cmd)
+    finally:
+        fdb.disconnectDB()
 
 def schedule_results_analyze(dir_name='results', interval_time=10):
     """
