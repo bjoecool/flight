@@ -57,8 +57,8 @@ def start_task():
     i = 0
     total_tasks = 0
     
-#     result_p = start_handle_result_process()
-#     result_p.start()
+    result_p = start_handle_result_process()
+    result_p.start()
 
     wkm = worker.WorkerMonitor()
     
@@ -119,7 +119,7 @@ def start_task():
         wkm.stop_workers()
         wkm.stop_monitor()
         mydb.disconnectDB()
-#         result_p.terminate()
+        result_p.terminate()
 
 def wait_tasks_finished(result_q, total_task_num):
     task_num = 0
@@ -134,7 +134,7 @@ def wait_tasks_finished(result_q, total_task_num):
 
 def start_handle_result_process():
     main_logger.info('Invoking the result.schedule_results_analyze function')
-    p = mp.Process(target=result.schedule_results_analyze, args=('results',60))
+    p = mp.Process(target=result.schedule_results_analyze, args=('results',20))
     
     return p
     
@@ -179,7 +179,7 @@ def main():
     
     print("Start the main function")
 
-    os.chdir('/db/github/flight')
+    os.chdir('/db/github/flight/expedia')
         
 #     display = Display(visible=0, size=(1024,768))
 #     display.start()

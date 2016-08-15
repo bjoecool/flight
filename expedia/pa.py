@@ -98,12 +98,13 @@ def parse_one_leg_obj(obj):
         flight_info["airline_codes"]=carrierSummary_obj["airlineCodes"]
         flight_info["dep_time"] =  departureTime_obj["isoStr"]
         flight_info["arr_time"] =  arrivalTime_obj["isoStr"]
-        flight_info["price"] = price_obj["formattedPrice"]
+        flight_info["price"] = price_obj["exactPrice"]
         flight_info["price_code"] = price_obj["currencyCode"]
         flight_info["duration"] = str(duration_obj["hours"])+"h"+str(duration_obj["minutes"])+"m"
         flight_info["stop"] = obj["stops"]
         timeline_info = parse_timeline_array(timeline_array)
         flight_info["stop_info"] = timeline_info["stop_details"]
+        flight_info["span_days"] = 0
         
         company = None
         ### Only get the first name because the database only support one now,
@@ -127,17 +128,34 @@ def parse_one_leg_obj(obj):
 
 def parse_one_file(file_name):
     flight_list=[]
+    ret = False
+    flight_id = None
+    search_date = None
     
-    with open(file_name) as f:
-        line=f.readline()
-        s1 = json.loads(line)
-        legs = s1["content"]["legs"]
-        for key in legs.keys():
-            leg_obj = legs[key]
-            flight_info = parse_one_leg_obj(leg_obj)
-            flight_list.append(flight_info)
+    try:    
+        with open(file_name) as f:
+            for line in f.readlines():
+                if line[0:11]=='<flight_id>':
+                    flight_id = line[11:].strip()
+                elif line[0:13] == '<search_date>':
+                    search_date = line[13:].strip()
+                elif line[0:13] == '<flight_info>':
+                    content_line = line[13:].strip()
+                    s1 = json.loads(content_line)
+                    legs = s1["content"]["legs"]
+                    for key in legs.keys():
+                        leg_obj = legs[key]
+                        flight_info = parse_one_leg_obj(leg_obj)
+                        flight_info['id']=flight_id
+                        flight_info['search_date'] = search_date
+                        flight_list.append(flight_info)
+                        ret = True
 
-    return flight_list
+    except FileNotFoundError as err:
+        print("File not found for %s" %file_name)
+        flight_list = None
+    finally:
+        return ret,flight_id,search_date,flight_list
 
 # def test(file_name):
 #     flight_list=[]

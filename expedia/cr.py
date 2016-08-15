@@ -22,8 +22,11 @@ from datetime import date
 from datetime import datetime
 from datetime import timedelta
 import requests
+import subprocess
 
-proxies = {'http':'127.0.0.1:3128','https':'127.0.0.1:3128'}
+
+# proxies = {'http':'127.0.0.1:3128','https':'127.0.0.1:3128'}
+proxies=None
 
 url_temp = '''\
 https://www.expedia.com.au/Flights-Search?\
@@ -78,6 +81,30 @@ def get_json_url(content):
         
     return url
         
+def finalize_tmp_result_file_name(tmp_file_name):
+    if tmp_file_name == None:
+        return
+    
+    finalname = tmp_file_name.split('.')[0]+'.txt'
+    
+    try:
+        retcode = subprocess.call("mv "+tmp_file_name+" "+finalname, shell=True)
+        if retcode<0:
+            print("Child was terminated by signal",retcode, file=sys.stderr)
+    except OSError as e:
+        print("Execution failed:", e, file=sys.stderr)
+
+def create_tmp_result_file_name(flight_id, store_dir):
+    file_name = None
+    
+    t1 = datetime.now()
+    t1 = t1.strftime('%Y%m%d')
+    
+    file_name = "res_"+t1+"_"+str(flight_id)+"._xt"
+    file_name = store_dir+'/'+ file_name
+    
+    return file_name
+
 def create_result_file_name(flight_id):
     file_name = None
     
@@ -94,13 +121,14 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
     this url.
     """
     
-    file_name = create_result_file_name(flight_id)
+    file_name = create_tmp_result_file_name(flight_id,store_dir)
     
+     
     if file_name == None:
         print("create_result_file_name return NULL")
         return
-    
-    file_name=store_dir+'/'+file_name
+     
+    flight_id = str(flight_id)
     
     r = requests.get(url,proxies=proxies)
     
@@ -112,10 +140,35 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
 
     r = requests.get(json_url,proxies=proxies)
     
+    
     if r.status_code==200:
         with open(file_name,'wb') as f:
+            flight_id="<flight_id>"+flight_id
+            f.write(flight_id.encode())
+            f.write(b'\n')
+            
+            #Write the url
+            url = "<url>"+url
+            f.write(url.encode())
+            f.write(b'\n')
+            
+            #Write the search date
+            t = datetime.now().strftime("%Y-%m-%d")
+            search_date = "<search_date>"+t
+            f.write(search_date.encode())
+            f.write(b'\n')
+    
+            #Write the worker number
+            f.write(b"<flight_info>")
+            
             ret = r.content
             f.write(ret)
+            
+            time.sleep(1)
+            
+            finalize_tmp_result_file_name(file_name)
+          
+
 #             print("Created file %s" %file_name)
     else:
         print("Get %d code for json_url:%s" %(r.status_code,json_url))    

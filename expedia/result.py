@@ -24,7 +24,7 @@ import datetime
 import logging
 import db
 import re
-import expedia.pa as pa
+import pa as pa
 from enum import Enum
 
 logger = None
@@ -313,16 +313,23 @@ def analyze_results_to_db(dir_name='results'):
     Analyze the result files stored in the dir directory.
     Store the results in the database.
     """
+    global logger
+    
     file_list = get_all_files(dir_name)
+    
     fdb = db.FlightPlanDatabase()
     fdb.connectDB()
     try:
         for f in file_list:
-            ret, flight_id,search_date,flight_list = analyze_one_file(f)
+            print(f)
+            ret, flight_id,search_date,flight_list = pa.parse_one_file(f)
             if ret==True:
                 update_flight_list_into_db(fdb,flight_id,search_date,flight_list,2)
+                logger.info("%s [%s] --- result number %d" %(f, flight_id,len(flight_list)))
             else:
                 update_flight_list_into_db(fdb,flight_id,search_date,[],0)
+                logger.error("Error happened in analyzing %s" %(f))
+                
             cmd="mv "+f +" "+"backup/"
             print(cmd)
             os.system(cmd)
@@ -378,9 +385,9 @@ def main():
 
     init_log()
     
-#     analyze_results_to_db()
+    analyze_results_to_db()
 #     schedule_results_analyze()
-    t1()
+#     t1()
     
 
 def test():

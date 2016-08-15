@@ -24,7 +24,7 @@ import url
 import db
 import selenium
 import recorder
-import expedia.cr as crawler_worker
+import cr as crawler_worker
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By

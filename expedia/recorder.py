@@ -33,7 +33,6 @@ class Recorder():
         self.filename=dir+"/"+prefix+date+"_"+schedule_id+"._xt"
         self.finalname=dir+"/"+prefix+date+"_"+schedule_id+".txt"
         self.mode=mode
-        self.f = None
         
         if mode == RecorderMode.binary:
             self.f = open(self.filename,"wb")
@@ -46,8 +45,7 @@ class Recorder():
 #             os.remove(filename)
 
     def __del__(self):
-        if self.f != None:
-            self.f.close()
+        self.f.close()
         
     def new_line(self):
         if self.mode == RecorderMode.binary:
