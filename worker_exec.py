@@ -24,6 +24,7 @@ import url
 import db
 import selenium
 import recorder
+import expedia.rc as crawler_worker
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -128,7 +129,8 @@ def execTask(task_q,result_q, stat_q,num,driver):
             
             worker_logger.info("%s send url : %s\n" %(worker_name,req_url))
             
-            getFlightPrice(driver, req_url,flight_id, num)
+#             getFlightPrice(driver, req_url,flight_id, num)
+            crawler_worker.request_one_flight_by_url(flight_id,req_url)
             
             t2 = datetime.datetime.now()
             tx = t2-t1

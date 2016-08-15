@@ -64,6 +64,8 @@ def get_departure_date(base_date,days):
     return dep_date
 
 def get_json_url(content):
+    url = None
+    
     content_list=content.split(b'\n')
     for line in content_list:
         if line.find(b'originalContinuationId')!=-1:
@@ -72,7 +74,51 @@ def get_json_url(content):
             s = s.split(b'<')[0]
             s = s.decode()
             url = '''https://www.expedia.com.au/Flight-Search-Paging?c={0}&is=1&sp=asc&cz=200&cn=0 HTTP/1.1'''.format(s)
-            return url
+            break
+        
+    return url
+        
+def create_result_file_name(flight_id):
+    file_name = None
+    
+    t1 = datetime.now()
+    t1 = t1.strftime('%Y-%m-%d')
+    
+    file_name = "res_"+t1+"_"+str(flight_id)+".txt"
+    
+    return file_name
+            
+def request_one_flight_by_url(flight_id,url,store_dir="results"):
+    """
+    This is the function to send URL to EXPEDIA and get the flight price for
+    this url.
+    """
+    
+    file_name = create_result_file_name(flight_id)
+    
+    if file_name == None:
+        print("create_result_file_name return NULL")
+        return
+    
+    file_name=store_dir+'/'+file_name
+    
+    r = requests.get(url,proxies=proxies)
+    
+    json_url = get_json_url(r.content)
+    
+    if json_url == None:
+        print("Failed get json_url for url[%s]" %url)
+        return
+
+    r = requests.get(json_url,proxies=proxies)
+    
+    if r.status_code==200:
+        with open(file_name,'wb') as f:
+            ret = r.content
+            f.write(ret)
+#             print("Created file %s" %file_name)
+    else:
+        print("Get %d code for json_url:%s" %(r.status_code,json_url))    
 
 def reuqest_one_flight(departure_date):
     """
