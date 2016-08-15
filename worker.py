@@ -119,8 +119,8 @@ class Worker():
     def start(self):
         try:
             self.log.info("Creating worker process")
-            self.driver = wke.createDriver()
-            p = mp.Process(target=wke.execTask, args=(self.task_q, self.result_q, self.stat_q, self.num,self.driver))
+#             self.driver = wke.createDriver()
+            p = mp.Process(target=wke.execTask, args=(self.task_q, self.result_q, self.stat_q, self.num,None))
             self.handle = p
             self.status = WorkerStatus.running;
             self.no_heartbeat_times = 0

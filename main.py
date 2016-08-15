@@ -27,7 +27,7 @@ import result
 
 import multiprocessing as mp
 
-from pyvirtualdisplay import Display
+# from pyvirtualdisplay import Display
 
 
 main_logger=None
@@ -43,7 +43,7 @@ def start_task():
     
     main_logger.info("Enter the start_task function")
     
-    max_task_num = 5400
+    max_task_num = 10
 
     # create today's flight schedule and task
     db.create_today_flight_schedule()
@@ -57,8 +57,8 @@ def start_task():
     i = 0
     total_tasks = 0
     
-    result_p = start_handle_result_process()
-    result_p.start()
+#     result_p = start_handle_result_process()
+#     result_p.start()
 
     wkm = worker.WorkerMonitor()
     
@@ -119,7 +119,7 @@ def start_task():
         wkm.stop_workers()
         wkm.stop_monitor()
         mydb.disconnectDB()
-        result_p.terminate()
+#         result_p.terminate()
 
 def wait_tasks_finished(result_q, total_task_num):
     task_num = 0
@@ -179,10 +179,10 @@ def main():
     
     print("Start the main function")
 
-    os.chdir('/db/github/flight')
+    os.chdir('/db2/github/flight')
         
-    display = Display(visible=0, size=(1024,768))
-    display.start()
+#     display = Display(visible=0, size=(1024,768))
+#     display.start()
 
     t1 = datetime.datetime.now()
     
@@ -199,7 +199,7 @@ def main():
 
     main_logger.info("\n*************************************Exit the main function*************************************\n")
     
-    display.stop()
+#     display.stop()
     
     print("Exit the main function")
     

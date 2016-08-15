@@ -19,6 +19,7 @@
 import sys
 import time
 import json
+import argparse
 
 flight_info_keys=["index","price","price_code","dep_time","arr_time","duration","stop","stop_info","company"]
 
@@ -156,7 +157,7 @@ def parse_one_file(file_name):
 
 def main():
 #     test('results/2016-09-01.txt')
-    flight_list = parse_one_file('ret/2016-09-02.txt')
+    flight_list = parse_one_file('../results/res_2016-08-15_640.txt')
     
     for flight_info in flight_list:
         print_fligth_info(flight_info)
