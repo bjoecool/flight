@@ -28,6 +28,9 @@ import subprocess
 # proxies = {'http':'127.0.0.1:3128','https':'127.0.0.1:3128'}
 proxies=None
 
+# 30second for request time out
+request_time_out=10
+
 url_temp = '''\
 https://www.expedia.com.au/Flights-Search?\
 trip=oneway&\
@@ -121,6 +124,9 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
     this url.
     """
     
+    global request_time_out
+    retry_number = 0
+    
     file_name = create_tmp_result_file_name(flight_id,store_dir)
     
      
@@ -130,7 +136,23 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
      
     flight_id = str(flight_id)
     
-    r = requests.get(url,proxies=proxies)
+    while(retry_number<3):
+        try:
+            r = requests.get(url,proxies=proxies, timeout=request_time_out)
+            retry_number = retry_number+1
+            if r.status_code==200:
+                break
+        except requests.exceptions.Timeout as e:
+            print("requests.exceptions.Timeout for %s" %url)
+            retry_number = retry_number+1
+            if retry_number>=3:
+                print("request %s has time out for max times[%d]" %(url,retry_number))
+                return
+            continue
+        except Exception as err:
+            print('''Error happened when request {0} , error is {1}'''.format(url,err))
+            return
+       
     
     json_url = get_json_url(r.content)
     
@@ -138,8 +160,24 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
         print("Failed get json_url for url[%s]" %url)
         return
 
-    r = requests.get(json_url,proxies=proxies)
+    retry_number = 0
     
+    while(retry_number<3):
+        try:
+            r = requests.get(json_url,proxies=proxies, timeout=request_time_out)
+        except requests.exceptions.Timeout:
+            print("requests.exceptions.Timeout for %s" %url)
+            retry_number = retry_number+1
+            if retry_number>=3:
+                print("request url %s has time out for max times[%d]" %(retry_number,json_url))
+                return
+            continue
+        except Exception as err:
+            print('''Error happened when request {0} , error is {1}'''.format(json_url,err))
+            return
+    
+        if r.status_code==200:
+            break
     
     if r.status_code==200:
         with open(file_name,'wb') as f:
@@ -198,11 +236,17 @@ def reuqest_one_flight(departure_date):
         print("Get %d code for json_url:%s" %(r.status_code,json_url))
     
 def test():
+    
+    url='''https://www.expedia.com.au/Flights-Search?trip=oneway&leg1=from:Sydney,%20NSW,%20Australia%20%28SYD-All%20Airports%29,to:BJS,departure:08/09/2016TANYT&passengers=children:0,adults:1,seniors:0,infantinlap:Y&mode=search'''
+    
     t1 = datetime.now()
     
-    for i in range(0,50):
-        dep_date = get_departure_date(date(2016,10,1),i)
-        reuqest_one_flight(dep_date)
+#     for i in range(0,50):
+#         dep_date = get_departure_date(date(2016,10,1),i)
+#         reuqest_one_flight(dep_date)
+    
+    
+    request_one_flight_by_url(1,url)
         
     t2 = datetime.now()
     
