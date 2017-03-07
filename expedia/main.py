@@ -43,7 +43,7 @@ def start_task():
     
     main_logger.info("Enter the start_task function")
     
-    max_task_num = 10
+    max_task_num = 5400
 
     # create today's flight schedule and task
     db.create_today_flight_schedule()

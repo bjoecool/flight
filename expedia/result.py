@@ -331,7 +331,7 @@ def analyze_results_to_db(dir_name='results'):
                 logger.error("Error happened in analyzing %s" %(f))
                 
             cmd="mv "+f +" "+"backup/"
-            print(cmd)
+#             print(cmd)
             os.system(cmd)
     finally:
         fdb.disconnectDB()
