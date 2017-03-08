@@ -46,6 +46,7 @@ def start_task():
     max_task_num = 5400
 
     # create today's flight schedule and task
+    db.init_conf()
     db.create_today_flight_schedule()
         
     mydb = db.FlightPlanDatabase()
@@ -179,7 +180,7 @@ def main():
     
     print("Start the main function")
 
-    os.chdir('/db/github/flight/expedia')
+#     os.chdir('/db/github/flight/expedia')
         
 #     display = Display(visible=0, size=(1024,768))
 #     display.start()

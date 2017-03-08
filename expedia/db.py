@@ -23,18 +23,25 @@ import logging
 
 main_logger = None
 
+g_dbname='expedia'
+g_user='wangj'
+g_host='localhost'
+g_port=5432
+g_pass=''
+
 class DBError(Exception):
     def __init__(self,reason="unknown"):
         self.reason = reason
     
 class FlightPlanDatabase():
-    def __init__(self,database='expedia',user='wangj', host='localhost', port=5432):
+    def __init__(self,database=g_dbname,user=g_user, host=g_host, port=g_port, password=g_pass):
         self.database=database
         self.user=user
         self.host=host
         self.port=port
         self.conn=None
         self.connected = False
+        self.password = password
         
     def __del__(self):
         if self.connected==True:
@@ -45,10 +52,11 @@ class FlightPlanDatabase():
             self.conn = psycopg2.connect(database=self.database,
                                         user=self.user,
                                         host=self.host,
-                                        port=self.port)
+                                        port=self.port,
+                                        password = self.password)
             self.connected = True
         except psycopg2.OperationalError:
-            raise DBError("Failed to connetc to DB")
+            raise DBError("Failed to connetc to DB : "+self.database )
             
     def disconnectDB(self):
         try:
@@ -427,6 +435,28 @@ def init_log():
     worker_logger.addHandler(logger_handle)
     
     return main_logger
+
+def init_conf():
+    """
+    Read configure file.
+    """
+    global g_dbname
+    global g_user
+    global g_host
+    global g_port
+    global g_pass
+    
+    with open("db.conf") as f:
+        for line in f.readlines():
+            line = line.strip()
+            if line[0:7]=="dbname:":
+                g_dbname = line[7:]
+            elif line[0:5]=="user:":
+                g_user = line[5:] 
+            elif line[0:5]=="host:":
+                g_host = line[5:]
+            elif line[0:9]=="password:":
+                g_pass = line[9:]
             
 def main():
     init_log()

@@ -22,66 +22,22 @@ import time
 import datetime
 import url
 import db
-import selenium
+# import selenium
 import recorder
 import cr as crawler_worker
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.proxy import *
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+# from selenium import webdriver
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.common.keys import Keys
+# from selenium.webdriver.remote.webelement import WebElement
+# from selenium.webdriver.common.proxy import *
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.webdriver.support.ui import WebDriverWait
 from recorder import Recorder
 
 worker_name=["worker_0"]
 
 worker_logger=None
-
-myProxy = "127.0.0.1:3128"
-
-proxy = Proxy({
-    'proxyType': ProxyType.MANUAL,
-    'httpProxy': myProxy,
-    'ftpProxy': myProxy,
-    'sslProxy': myProxy,
-    'noProxy': '' # set this value as desired
-    })
-
-def createDriver():
-#     driver = webdriver.Firefox(proxy=proxy)
-    
-    driver = webdriver.Firefox()
-    return driver
-
-def closeDriver(driver):
-#     driver.close()
-    driver.quit()
-    
-def runDriver(driver,url,id):
-    global worker_logger
-    
-#     t1 = datetime.datetime.now()
-    driver.get(url)
-    ret = True
-#     t2 = datetime.datetime.now()
-#     tx = t2-t1
-#     worker_logger.info("%s driver.get cost %d seconds for id[%d]" %(worker_name,tx.seconds,id))
-    try:
-        t1 = datetime.datetime.now()
-        time.sleep(15)
-        element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "feedbackAndImprovements")))
-        t2 = datetime.datetime.now()
-        tx = t2-t1
-        worker_logger.info("%s WebDriverWait cost %d seconds" %(worker_name,tx.seconds))
-    except TimeoutException as tterr:
-        worker_logger.info("%s Time out for get URL[%d]" %(worker_name,id))
-        ret = False
-    except Exception as err:
-        print("error ",err)
-    finally:
-        return ret
 
 def execTask(task_q,result_q, stat_q,num,driver):
     """
@@ -101,10 +57,9 @@ def execTask(task_q,result_q, stat_q,num,driver):
     worker_logger.info(worker_name+" started")
     print(worker_name, " started")
     
+    db.init_conf()
     mydb = db.FlightPlanDatabase()
     mydb.connectDB()
-    
-#     driver = createDriver()
     
     try:
         while(1):
@@ -119,7 +74,6 @@ def execTask(task_q,result_q, stat_q,num,driver):
             t1 = datetime.datetime.now()
             flight_id = d['data']
             search_date=d['date']
-#             print("%s Start handle task with flight id %d" %(worker_name,flight_id))
             worker_logger.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
             
             result_q.put(flight_id)
@@ -129,17 +83,14 @@ def execTask(task_q,result_q, stat_q,num,driver):
             
             worker_logger.info("%s send url : %s\n" %(worker_name,req_url))
             
-#             getFlightPrice(driver, req_url,flight_id, num)
             crawler_worker.request_one_flight_by_url(flight_id,req_url)
             
             t2 = datetime.datetime.now()
             tx = t2-t1
             worker_logger.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
-#             print("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
             
             stat_q.put(num)
     finally:
-#         closeDriver(driver)
         worker_logger.info(worker_name+" exited")
         print(worker_name, " exited")
 
@@ -150,7 +101,6 @@ def get_flight_info_from_flight_module_element(flight_module_element):
     2. flight_company as string
     """
     price_element_class_name='price-column'
-#     flight_company_class_name=''
     
     price_element = flight_module_element.find_element_by_css_selector('.flight-module.offer-listing.price-column.offer-price.dollars')
     price = price_element.text()
@@ -160,51 +110,6 @@ def get_flight_info_from_flight_module_element(flight_module_element):
     
     return price,company_name
     
-def getFlightPrice(driver, url, id, worker_num):
-    """
-    This function send url to remote server and get the result.
-    Save the result into file.
-    Input parameter: 
-        dirver: The web driver.
-        url: type[string] . The url address.
-        id: type[int] The flight id.
-        worker_num: type[int] the worker number.
-    """
-#     flight_module_class_name='flight-module.segment.offer-listing'
-
-        
-    flight_id=str(id)
-    
-    re = Recorder(flight_id,recorder.RecorderMode.binary)
-    
-    if runDriver(driver,url,id)==True:
-        #Write the fight id.
-        flight_id="<flight_id>"+flight_id
-        re.writeN(flight_id)
-        
-        #Write the url
-        re.write("<url>")
-        re.writeN(url)
-        
-        #Write the search date
-        t = datetime.datetime.now().strftime("%Y-%m-%d %H %M %S")
-        search_date = "<search_date>"+t
-        re.writeN(search_date)
-
-        #Write the worker number
-        re.write("<worker_num>")
-        re.writeN(str(worker_num))
-
-          
-        time.sleep(1)
-        body_element = driver.find_element_by_tag_name('body')
-        re.writeN(body_element.text)
-
-        time.sleep(1)
-        re.finish()
-    else:
-        print("worker[%d] failed to handle flight_id[%d]" %(worker_num, id))
-
 def get_urls_from_file(filename):
     """
     Get the urls from the file and return as a list.
@@ -222,17 +127,18 @@ def get_urls_from_file(filename):
     return url_list
 
 def test():
-    d = createDriver()
-    
-    url_list = get_urls_from_file('test/url_list.txt')
-    num=1
-    
-    try:
-        for url in url_list:
-            getFlightPrice(d,url,num,1)
-            num+=1
-    finally:    
-        closeDriver(d)
+#     d = createDriver()
+#     
+#     url_list = get_urls_from_file('test/url_list.txt')
+#     num=1
+#     
+#     try:
+#         for url in url_list:
+#             getFlightPrice(d,url,num,1)
+#             num+=1
+#     finally:    
+#         closeDriver(d)
+    pass
 
 def init_log():
     """
