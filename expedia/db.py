@@ -34,14 +34,14 @@ class DBError(Exception):
         self.reason = reason
     
 class FlightPlanDatabase():
-    def __init__(self,database=g_dbname,user=g_user, host=g_host, port=g_port, password=g_pass):
-        self.database=database
-        self.user=user
-        self.host=host
-        self.port=port
+    def __init__(self):
+        self.database=g_dbname
+        self.user=g_user
+        self.host=g_host
+        self.port=g_port
         self.conn=None
         self.connected = False
-        self.password = password
+        self.password = g_pass
         
     def __del__(self):
         if self.connected==True:
@@ -56,6 +56,8 @@ class FlightPlanDatabase():
                                         password = self.password)
             self.connected = True
         except psycopg2.OperationalError:
+            print("database -- %s" %self.database)
+            print("host -- %s" %self.host)
             raise DBError("Failed to connetc to DB : "+self.database )
             
     def disconnectDB(self):
@@ -457,7 +459,9 @@ def init_conf():
                 g_host = line[5:]
             elif line[0:9]=="password:":
                 g_pass = line[9:]
-            
+
+    print("host -- %s" %g_host)
+    
 def main():
     init_log()
     create_today_flight_schedule()
