@@ -330,9 +330,8 @@ def analyze_results_to_db(dir_name='results'):
                 update_flight_list_into_db(fdb,flight_id,search_date,[],0)
                 logger.error("Error happened in analyzing %s" %(f))
                 
-            cmd="mv "+f +" "+"backup/"
-#             print(cmd)
-            os.system(cmd)
+#             cmd="mv "+f +" "+"backup/"
+#             os.system(cmd)
     finally:
         fdb.disconnectDB()
 
