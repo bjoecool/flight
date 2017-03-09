@@ -203,6 +203,10 @@ def main():
 #     display.stop()
     
     print("Exit the main function")
-    
+
+def print_time():
+    s1=datetime.datetime.now()
+    s1 = s1.strftime('%Y-%m-%d %H:%M:%S')
+    print(s1)
 if __name__=='__main__':
     main()
