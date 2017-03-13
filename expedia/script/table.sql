@@ -98,3 +98,14 @@ search_date date --- date to get it
 );
 
 
+CREATE TABLE flight_task_status(
+total_tasks int,
+success_tasks int,
+total_records int,
+workers int,
+task_start_time timestamp with time zone,
+task_finished_time timestamp with time zone,
+execute_date date primary key
+);
+
+

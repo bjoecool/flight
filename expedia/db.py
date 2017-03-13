@@ -17,6 +17,7 @@
 # along with fiqs.  If not, see <http://www.gnu.org/licenses/>.
 
 import psycopg2
+import time
 import datetime
 import url
 import logging
@@ -361,7 +362,68 @@ class FlightPlanDatabase():
             cur.execute('''select create_one_way_airlines(%s)''',(sd_str,))
             self.conn.commit()
         cur.close()
+
+    def insert_flight_task_status(self,total_tasks,failure_tasks,success_tasks,total_records,task_start_time,task_finished_time,execute_date):
+        cur = self.conn.cursor()
+            
+        cur.execute('''INSERT INTO flight_task_status 
+                       (total_tasks,failure_tasks,success_tasks,total_records,task_start_time,task_finished_time,execute_date)
+                        VALUES(%s,%s,%s,%s,%s,%s,%s);''',
+                        (total_tasks,
+                        failure_tasks,
+                        success_tasks,
+                        total_records,
+                        task_start_time,
+                        task_finished_time,
+                        execute_date))
         
+        self.conn.commit()
+        cur.close()
+        
+    def update_fligth_task_status(self,task_start_time, task_finished_time,workers_num, execute_date):
+        cur = self.conn.cursor()
+        
+        cur.execute('''SELECT COUNT(*) FROM flight_task_status where execute_date=%s''',
+                    (execute_date,),)
+            
+        col = cur.fetchone()
+        num = int(col[0])
+        if num > 0:
+            return        
+
+        cur.execute('''SELECT COUNT(*) FROM flight_price_query_task where execute_date=%s''',
+                    (execute_date,),)
+        col = cur.fetchone()
+        total_tasks = int(col[0])
+        
+        cur.execute('''SELECT COUNT(*) FROM flight_price_query_task where status = 2 and execute_date=%s''',
+                    (execute_date,),)
+
+        col = cur.fetchone()
+        success_tasks = int(col[0])
+
+
+        cur.execute('''SELECT COUNT(*) FROM flight_price where search_date=%s''',
+                    (execute_date,),)
+
+        col = cur.fetchone()
+        total_records = int(col[0])
+       
+        cur.execute('''INSERT INTO flight_task_status 
+                       (total_tasks,success_tasks,total_records,workers,task_start_time,task_finished_time,execute_date)
+                        VALUES(%s,%s,%s,%s,%s,%s,%s);''',
+                        (total_tasks,
+                        success_tasks,
+                        total_records,
+                        workers_num,
+                        task_start_time,
+                        task_finished_time,
+                        execute_date))
+        
+        self.conn.commit()        
+        
+        cur.close()
+                
 def test():
     fdb = FlightPlanDatabase()
   
@@ -461,10 +523,34 @@ def init_conf():
                 g_pass = line[9:]
 
     print("host -- %s" %g_host)
+
+def connect_db():
+    global g_dbname
+    global g_user
+    global g_host
+    global g_port
+    global g_pass
     
+    conn = None
+    
+    try:
+        conn = psycopg2.connect(database=g_dbname,
+                                    user=g_user,
+                                    host=g_host,
+                                    port=g_port,
+                                    password = g_pass)
+    except psycopg2.OperationalError:
+        print("database -- %s" %g_dbname)
+        print("host -- %s" %g_host)
+        raise DBError("Failed to connetc to DB : "+g_dbname )
+    finally:
+        return conn
+       
 def main():
     init_log()
-    create_today_flight_schedule()
+#     init_conf()
+    test_update_fligth_task_status()
+#     create_today_flight_schedule()
 #     test_get_flight_url_by_id()
     
 
@@ -483,5 +569,28 @@ def test_get_flight_url_by_id():
     finally:
         fdb.disconnectDB() 
 
+def test_update_fligth_task_status():
+    fdb = FlightPlanDatabase()
+    try:
+        fdb.connectDB()
+        
+        t1 = datetime.datetime.now()
+        
+        start_time = t1.strftime('%Y-%m-%d %H:%M:%S')
+               
+        time.sleep(5)
+        
+        t2 = datetime.datetime.now()
+        end_time = t2.strftime('%Y-%m-%d %H:%M:%S')
+        
+        execute_date = datetime.date.today().isoformat()
+        
+        fdb.update_fligth_task_status(start_time,end_time,4,execute_date)
+
+    except DBError as err:
+        print("Error: %s" % str(err))
+    finally:
+        fdb.disconnectDB()
+        
 if __name__=='__main__':
     main()

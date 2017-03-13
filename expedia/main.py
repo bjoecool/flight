@@ -196,6 +196,8 @@ def main():
     t2 = datetime.datetime.now()
     tx = t2-t1
     
+    end_task(t1,t2)
+    
     main_logger.info("Total cost time is %d seconds" %tx.seconds)
 
     main_logger.info("\n*************************************Exit the main function*************************************\n")
@@ -203,6 +205,27 @@ def main():
 #     display.stop()
     
     print("Exit the main function")
+
+def end_task(t1,t2):
+    global  g_worker_num
+    
+    fdb = db.FlightPlanDatabase()
+    try:
+        fdb.connectDB()
+        
+        start_time = t1.strftime('%Y-%m-%d %H:%M:%S')
+               
+        t2 = datetime.datetime.now()
+        end_time = t2.strftime('%Y-%m-%d %H:%M:%S')
+        
+        execute_date = datetime.date.today().isoformat()
+        
+        fdb.update_fligth_task_status(start_time,end_time,g_worker_num,execute_date)
+    
+    except db.DBError as err:
+        print("Error: %s" % str(err))
+    finally:
+        fdb.disconnectDB()
 
 def print_time():
     s1=datetime.datetime.now()
