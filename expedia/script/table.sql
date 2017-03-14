@@ -75,7 +75,7 @@ create_date date);
 ---- Also the task manager can see which task are waiting to be done.
 CREATE TABLE flight_price_query_task(
 flight_id int4,  --- references flight(id)
-status int4, ---- 0: not finished. 1: finished
+status int4, ---- 0: not start. 1:being taken by worker. 2: finished
 execute_date date   ---- date to execute the task
 );
 
