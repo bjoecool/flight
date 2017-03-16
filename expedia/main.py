@@ -204,10 +204,6 @@ def main():
     
     init_configure()
     
-    print(g_worker_num)
-
-    quit(0)
-
     main_logger = init_log()
     result.init_log()
     main_logger.info("\n\n*************************************Start the main function*************************************\n")
