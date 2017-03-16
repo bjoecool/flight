@@ -522,8 +522,6 @@ def init_conf():
             elif line[0:9]=="password:":
                 g_pass = line[9:]
 
-    print("host -- %s" %g_host)
-
 def connect_db():
     global g_dbname
     global g_user

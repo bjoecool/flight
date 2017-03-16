@@ -14,6 +14,8 @@ insert into city values(6,'shanghai','SHA','Shanghai, China (SHA-All Airports)')
 insert into city values(7,'guangzhou','CAN','Guangzhou, China (CAN-Baiyun Intl.)');
 insert into city values(8,'shenzhen','SZX','Shenzhen, China (SZX-Shenzhen)');
 insert into city values(9,'hongkong','HKG','Hong Kong, Hong Kong (HKG-Hong Kong Intl.)');
+insert into city values(10,'Hangzhou','HGH','Hangzhou, China (HGH-Xiaoshan Intl.)');
+insert into city values(11,'Chengdu','CTU','Chengdu, China (CTU-Shuangliu Intl.)');
 
 
 ---- trip values

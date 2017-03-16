@@ -144,7 +144,22 @@ def delete_tmp():
     
     main_logger.info("%s Function delete_tmp was invoked" %process_name)
     os.system("rm -rf /tmp/*")
+
+def init_configure():
+    global g_worker_num
     
+    try:
+        with open("flight.conf") as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line[0:8]=="workers:":
+                    g_worker_num = line[8:].strip()
+    except Exception as err:
+        print("Can't find flight.conf")
+    finally:
+        pass
+                
+                    
 def init_log():
     """
     #Init the main logger
@@ -187,6 +202,12 @@ def main():
 
     t1 = datetime.datetime.now()
     
+    init_configure()
+    
+    print(g_worker_num)
+
+    quit(0)
+
     main_logger = init_log()
     result.init_log()
     main_logger.info("\n\n*************************************Start the main function*************************************\n")
