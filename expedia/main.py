@@ -154,6 +154,7 @@ def init_configure():
                 line = line.strip()
                 if line[0:8]=="workers:":
                     g_worker_num = line[8:].strip()
+                    g_worker_num = int(g_worker_num)
     except Exception as err:
         print("Can't find flight.conf")
     finally:
