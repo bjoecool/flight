@@ -32,6 +32,7 @@ import multiprocessing as mp
 
 main_logger=None
 g_worker_num = 4
+g_max_task_num = 5400
 
 process_name='[main]'
 
@@ -40,10 +41,11 @@ logger_handle = None
 def start_task():
     global g_worker_num
     global main_logger
+    global g_max_task_num
     
     main_logger.info("Enter the start_task function")
     
-    max_task_num = 5400
+    max_task_num = g_max_task_num
 
     # create today's flight schedule and task
     db.init_conf()
@@ -53,7 +55,11 @@ def start_task():
     
     mydb.connectDB()
     
-    mydb.create_today_task()
+    main_logger.info("Conneted to DB")
+    
+    total_task_num = mydb.create_today_task()
+    
+    main_logger.info("Created today's task, total_task_num is %d" %total_task_num)
     
     i = 0
     total_tasks = 0
@@ -64,6 +70,7 @@ def start_task():
     wkm = worker.WorkerMonitor()
     
     task_q,result_q = wkm.create_queue()
+    main_logger.info("Created queue.")
     
     try:
         while 1:
@@ -147,6 +154,7 @@ def delete_tmp():
 
 def init_configure():
     global g_worker_num
+    global g_max_task_num
     
     try:
         with open("flight.conf") as f:
@@ -155,6 +163,10 @@ def init_configure():
                 if line[0:8]=="workers:":
                     g_worker_num = line[8:].strip()
                     g_worker_num = int(g_worker_num)
+                elif line[0:len('max_tasks_num:')]=="max_tasks_num:":
+                    g_max_task_num = line[len('max_tasks_num:'):].strip()
+                    g_max_task_num = int(g_max_task_num)
+
     except Exception as err:
         print("Can't find flight.conf")
     finally:
@@ -170,6 +182,7 @@ def init_log():
     d = str(datetime.date.today())
     t1 = datetime.datetime.now()
     logname='log/air_'+d+'.log'
+    errlog = 'log/error_'+d+'.log'
     logger_handle=logging.FileHandler(logname)
     
     formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s')
@@ -184,6 +197,10 @@ def init_log():
     worker_logger.setLevel('INFO')
     worker_logger.addHandler(logger_handle)
     
+    error_logger= logging.getLogger('[Error]')
+    error_logger.setLevel('ERROR')
+    error_logger.addHandler(logger_handle)
+        
     return main_logger
 
 def close_log():

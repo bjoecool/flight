@@ -23,9 +23,9 @@ from datetime import datetime
 from datetime import timedelta
 import requests
 import subprocess
+import logging
 
-
-# proxies = {'http':'127.0.0.1:3128','https':'127.0.0.1:3128'}
+#proxies = {'http':'127.0.0.1:3128','https':'127.0.0.1:3128'}
 proxies=None
 
 # 30second for request time out
@@ -129,6 +129,7 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
     
     file_name = create_tmp_result_file_name(flight_id,store_dir)
     
+    error_logger= logging.getLogger('[Worker]')
      
     if file_name == None:
         print("create_result_file_name return NULL")
@@ -143,21 +144,21 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
             if r.status_code==200:
                 break
         except requests.exceptions.Timeout as e:
-            print("requests.exceptions.Timeout for %s" %url)
+            error_logger.error("requests.exceptions.Timeout for %s" %url)
             retry_number = retry_number+1
             if retry_number>=3:
-                print("request %s has time out for max times[%d]" %(url,retry_number))
+                error_logger.error("request %s has time out for max times[%d]" %(url,retry_number))
                 return
             continue
         except Exception as err:
-            print('''Error happened when request {0} , error is {1}'''.format(url,err))
+            error_logger.error('''Error happened when request {0} , error is {1}'''.format(url,err))
             return
        
     
     json_url = get_json_url(r.content)
     
     if json_url == None:
-        print("Failed get json_url for url[%s]" %url)
+        error_logger.error("Failed get json_url for url[%s]" %url)
         return
 
     retry_number = 0
@@ -166,14 +167,14 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
         try:
             r = requests.get(json_url,proxies=proxies, timeout=request_time_out)
         except requests.exceptions.Timeout:
-            print("requests.exceptions.Timeout for %s" %url)
+            error_logger.error("requests timeout [%d] for %s" %(retry_number,url))
             retry_number = retry_number+1
             if retry_number>=3:
-                print("request url %s has time out for max times[%d]" %(retry_number,json_url))
+                error_logger.error("request url %s has time out for max times[%d]" %(retry_number,json_url))
                 return
             continue
         except Exception as err:
-            print('''Error happened when request {0} , error is {1}'''.format(json_url,err))
+            error_logger.error('''Error happened when request {0} , error is {1}'''.format(json_url,err))
             return
     
         if r.status_code==200:
@@ -206,8 +207,6 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
             
             finalize_tmp_result_file_name(file_name)
           
-
-#             print("Created file %s" %file_name)
     else:
         print("Get %d code for json_url:%s" %(r.status_code,json_url))    
 

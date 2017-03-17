@@ -74,7 +74,7 @@ def execTask(task_q,result_q, stat_q,num,driver):
             t1 = datetime.datetime.now()
             flight_id = d['data']
             search_date=d['date']
-            worker_logger.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
+#             worker_logger.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
             
             result_q.put(flight_id)
             

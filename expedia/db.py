@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with fiqs.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import psycopg2
 import time
 import datetime
@@ -510,17 +511,18 @@ def init_conf():
     global g_port
     global g_pass
     
-    with open("db.conf") as f:
-        for line in f.readlines():
-            line = line.strip()
-            if line[0:7]=="dbname:":
-                g_dbname = line[7:]
-            elif line[0:5]=="user:":
-                g_user = line[5:] 
-            elif line[0:5]=="host:":
-                g_host = line[5:]
-            elif line[0:9]=="password:":
-                g_pass = line[9:]
+    if os.path.isfile('db.conf') == True:
+        with open("db.conf") as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line[0:7]=="dbname:":
+                    g_dbname = line[7:]
+                elif line[0:5]=="user:":
+                    g_user = line[5:] 
+                elif line[0:5]=="host:":
+                    g_host = line[5:]
+                elif line[0:9]=="password:":
+                    g_pass = line[9:]
 
 def connect_db():
     global g_dbname
