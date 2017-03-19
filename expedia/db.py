@@ -22,6 +22,7 @@ import time
 import datetime
 import url
 import logging
+import argparse
 
 main_logger = None
 
@@ -381,50 +382,69 @@ class FlightPlanDatabase():
         self.conn.commit()
         cur.close()
         
-    def update_fligth_task_status(self,task_start_time, task_finished_time,workers_num, execute_date):
+    def get_city_from_id(self,city_id):
+        """
+        This function return one record for the city as following:
+        city['name']  --- city name
+        city['ap_acronym']  --- airport acronym name
+        city['ap_name']  --- airport full name
+        """
         cur = self.conn.cursor()
         
-        cur.execute('''SELECT COUNT(*) FROM flight_task_status where execute_date=%s''',
-                    (execute_date,),)
-            
-        col = cur.fetchone()
-        num = int(col[0])
-        if num > 0:
-            return        
+        cur.execute('''SELECT name,short_name,url_name FROM city where id=%s;''',
+                    (city_id,))
 
-        cur.execute('''SELECT COUNT(*) FROM flight_price_query_task where execute_date=%s''',
-                    (execute_date,),)
+                    
         col = cur.fetchone()
-        total_tasks = int(col[0])
+        if col is None:
+            return None
         
-        cur.execute('''SELECT COUNT(*) FROM flight_price_query_task where status = 2 and execute_date=%s''',
-                    (execute_date,),)
+        city={}
+        city['name'] = col[0]
+        city['ap_acronym'] = col[1]
+        city['ap_name'] = col[2]
 
-        col = cur.fetchone()
-        success_tasks = int(col[0])
-
-
-        cur.execute('''SELECT COUNT(*) FROM flight_price where search_date=%s''',
-                    (execute_date,),)
-
-        col = cur.fetchone()
-        total_records = int(col[0])
-       
-        cur.execute('''INSERT INTO flight_task_status 
-                       (total_tasks,success_tasks,total_records,workers,task_start_time,task_finished_time,execute_date)
-                        VALUES(%s,%s,%s,%s,%s,%s,%s);''',
-                        (total_tasks,
-                        success_tasks,
-                        total_records,
-                        workers_num,
-                        task_start_time,
-                        task_finished_time,
-                        execute_date))
-        
-        self.conn.commit()        
-        
         cur.close()
-                
+
+        return city
+
+    def get_route_list(self,machine_name):
+        """
+        This function return a route_list from the table route.
+        The element in the route_list is as following:
+        route['from_city_id']  --- from city id
+        route['to_city_id']  --- to city id
+        route['from_city_name']  --- from city name
+        route['to_city_name']  --- to city name
+        """
+        cur = self.conn.cursor()
+        
+#         cur.execute('''SELECT from_city_id,to_city_id,from_city_name,to_city_name,machine from route;''')
+        cur.execute('''select from_city_id,to_city_id,from_city_name,to_city_name,%s 
+        from route 
+        where machine='machine1' 
+        order by from_city_id , to_city_id;''',
+        (machine_name,))
+
+        route_list = []
+        
+        while(1):
+            col = cur.fetchone()
+            if col is None:
+                break
+        
+            route={}
+            route['from_city_id'] = col[0]
+            route['to_city_id'] = col[1]
+            route['from_city_name'] = col[2]
+            route['to_city_name'] = col[3]
+            route['machine_name'] = col[4]
+            
+            route_list.append(route)
+
+        cur.close()
+
+        return route_list    
 def test():
     fdb = FlightPlanDatabase()
   
@@ -546,13 +566,7 @@ def connect_db():
     finally:
         return conn
        
-def main():
-    init_log()
-#     init_conf()
-    test_update_fligth_task_status()
-#     create_today_flight_schedule()
-#     test_get_flight_url_by_id()
-    
+
 
 def test_get_flight_url_by_id():
     
@@ -591,6 +605,189 @@ def test_update_fligth_task_status():
         print("Error: %s" % str(err))
     finally:
         fdb.disconnectDB()
+
+def create_flight_price_tables():
+    global g_dbname
+    global g_user
+    global g_host
+    global g_port
+    global g_pass
+
+    connected = False
+    
+    from_city_list = []
+    to_city_list = []
+    
+    try:
+        conn = psycopg2.connect(database=g_dbname,
+                                    user=g_user,
+                                    host=g_host,
+                                    port=g_port,
+                                    password = g_pass)    
+        connected = True
+        
+        cur = conn.cursor()
+
+        #Get from_city_list
+        cur.execute('''SELECT * FROM from_city''',)
+
+        while(1):
+            col = cur.fetchone()
+            if col==None:
+                break;
+            else:
+                from_city_list.append(int(col[0]))
+
+        #Get to_city_list
+        cur.execute('''SELECT * FROM to_city''',)
+
+        while(1):
+            col = cur.fetchone()
+            if col==None:
+                break;
+            else:
+                to_city_list.append(int(col[0]))
+
+        table_content ='''(
+id int4 primary key,
+trip int4 default 1, ---1: oneway ; 2: roundtrip 
+start_date date,
+stay_days int4,
+price money,
+company_id int4, ---references airline_company(id)
+flight_number varchar(40),  --the flight number,
+departure_time timestamp with time zone, 
+arrival_time timestamp with time zone,
+span_days int4,  
+duration text,  ---flight duration
+stop text,    --- stop times in the flight duration,default is 1 which means fligth to destination directly
+stop_info text, --- detail stop information
+rate float,
+search_date date --- date to get it
+);
+'''     
+
+        for from_city_id in from_city_list:
+            for to_city_id in to_city_list:
+                if from_city_id == to_city_id:
+                    continue
+                create_table_str = '''create table IF NOT EXISTS flight_{0}_{1}_price'''.format(str(from_city_id),str(to_city_id))
+                print(create_table_str)
+                create_table_str=create_table_str+table_content
+                cur.execute(create_table_str)
+                
+                create_table_str = '''create table IF NOT EXISTS flight_{0}_{1}_price'''.format(str(to_city_id),str(from_city_id))
+                print(create_table_str)
+                create_table_str=create_table_str+table_content
+                cur.execute(create_table_str)
+                
+        cur.close()
+        
+        conn.commit()
+        
+    except psycopg2.OperationalError:
+        print("database -- %s" %g_dbname)
+        print("host -- %s" %g_host)
+        
+    finally:
+        print('goto finally')
+        if connected == True:
+            conn.close()
+
+def update_route_table():
+    global g_dbname
+    global g_user
+    global g_host
+    global g_port
+    global g_pass
+
+    connected = False
+    
+    from_city_list = []
+    to_city_list = []
+    
+    try:
+        conn = psycopg2.connect(database=g_dbname,
+                                    user=g_user,
+                                    host=g_host,
+                                    port=g_port,
+                                    password = g_pass)    
+        connected = True
+        
+        cur = conn.cursor()
+
+        #Get from_city_list
+        cur.execute('''SELECT * FROM from_city''',)
+
+        while(1):
+            col = cur.fetchone()
+            if col==None:
+                break;
+            else:
+                from_city_list.append(int(col[0]))
+
+        #Get to_city_list
+        cur.execute('''SELECT * FROM to_city''',)
+
+        while(1):
+            col = cur.fetchone()
+            if col==None:
+                break;
+            else:
+                to_city_list.append(int(col[0]))
+
+        for from_city_id in from_city_list:
+            for to_city_id in to_city_list:
+                if from_city_id == to_city_id:
+                    continue
+                insert_cmd = '''insert into route values(nextval('route_id'),'machine1',{0},{1},get_city_name({2}),get_city_name({3}));'''.format(str(from_city_id),str(to_city_id),str(from_city_id),str(to_city_id))
+                print(insert_cmd)
+                cur.execute(insert_cmd)
+                
+                insert_cmd = '''insert into route values(nextval('route_id'),'machine1',{0},{1},get_city_name({2}),get_city_name({3}));'''.format(str(to_city_id),str(from_city_id),str(to_city_id),str(from_city_id))
+                print(insert_cmd)
+                cur.execute(insert_cmd)
+                
+        cur.close()
+        
+        conn.commit()
+        
+    except psycopg2.OperationalError:
+        print("database -- %s" %g_dbname)
+        print("host -- %s" %g_host)
+        
+    finally:
+        if connected == True:
+            conn.close()
+                    
+def main():
+    parser =argparse.ArgumentParser()
+    
+    parser.add_argument('cmd',help='Command [create,update,test]')
+    parser.add_argument('--table',help='Table to be created[price,route]')
+    
+    args = parser.parse_args()
+    
+    cmd_ind = args.cmd
+    table_name = args.table
+    
+    if table_name is None:
+        print("Please set table name by using --table")
+        quit(0)
+     
+    init_log()
+#     init_conf()
+    
+    if cmd_ind == 'create':
+        if table_name == 'price':
+            create_flight_price_tables()
+    if cmd_ind == 'update':
+        if table_name == 'route':
+            update_route_table()
+    elif cmd_ind == 'test':
+        test_update_fligth_task_status()
+#     create_today_flight_schedule()
+#     test_get_flight_url_by_id()
         
 if __name__=='__main__':
     main()

@@ -29,8 +29,8 @@ class ExpediaReqURL():
     def createURL(self,**fly):
         http_head="https://www.expedia.com.au/Flights-Search?mode=search"
         
-        from_city_name = fly["from"].lower()
-        to_city_name=fly["to"].lower()
+        from_city_name = fly["from"]
+        to_city_name=fly["to"]
         
         departure_date=fly['start_date'].strftime("%d-%m-%Y")
         

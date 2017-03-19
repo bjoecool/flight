@@ -21,7 +21,7 @@ CREATE SEQUENCE airline_id START 1;
 CREATE SEQUENCE airline_company_id START 1;
 CREATE SEQUENCE flight_id START 1;
 CREATE SEQUENCE city_id START 1;
-
+CREATE SEQUENCE route_id START 1;
 
 ------------------------------------------------
 ---- CREATE TABLES
@@ -109,3 +109,37 @@ execute_date date primary key
 );
 
 
+CREATE TABLE from_city(
+city_id int4 primary key -- references city(id)
+);
+
+CREATE TABLE to_city(
+city_id int4 primary key -- references city(id)
+);
+
+CREATE TABLE route(
+id int4 primary key,
+machine varchar,    --- machine name which is used to take this route to translate into a query task
+from_city_id int4,
+to_city_id int4,
+from_city_name varchar,
+to_city_name varchar);
+
+
+CREATE TABLE from_to_price(
+id int4 primary key,
+trip int4 default 1, ---1: oneway ; 2: roundtrip 
+start_date date,
+stay_days int4,
+price money,
+company_id int4, ---references airline_company(id)
+flight_number varchar(40),  --the flight number,
+departure_time timestamp with time zone, 
+arrival_time timestamp with time zone,
+span_days int4,  
+duration text,  ---flight duration
+stop text,    --- stop times in the flight duration,default is 1 which means fligth to destination directly
+stop_info text, --- detail stop information
+rate float,
+search_date date --- date to get it
+);
