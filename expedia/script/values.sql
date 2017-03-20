@@ -132,3 +132,6 @@ insert into airline values(nextval('airline_id'),9,3);
 --select * from create_one_way_airlines(current_date+1);
 
 --select * from create_roundtrip_airlines(current_date+1,90);
+
+update route set machine='machine1' where from_city_id >=5 and from_city_id<10 and to_city_id<10;
+update route set machine='machine1' where to_city_id >=5 and to_city_id<10 and from_city_id<10;

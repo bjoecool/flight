@@ -27,6 +27,8 @@ import result
 
 import multiprocessing as mp
 
+import task
+
 # from pyvirtualdisplay import Display
 
 
@@ -49,15 +51,18 @@ def start_task():
 
     # create today's flight schedule and task
     db.init_conf()
-    db.create_today_flight_schedule()
-        
-    mydb = db.FlightPlanDatabase()
     
-    mydb.connectDB()
+    task_list = task.get_today_tasks()
+    
+#     db.create_today_flight_schedule()
+#     mydb = db.FlightPlanDatabase()
+#     mydb.connectDB()
     
     main_logger.info("Conneted to DB")
     
-    total_task_num = mydb.create_today_task()
+#     total_task_num = mydb.create_today_task()
+
+    total_task_num = len(task_list)
     
     main_logger.info("Created today's task, total_task_num is %d" %total_task_num)
     
@@ -74,9 +79,10 @@ def start_task():
     
     try:
         while 1:
-            flight_list = mydb.get_today_task_id(max_task_num)
-            num_tasks = len(flight_list)
+#             flight_list = mydb.get_today_task_id(max_task_num)
+#             num_tasks = len(flight_list)
             
+            num_tasks = len(task_list)
             if num_tasks == 0:
                 break
             
@@ -90,11 +96,13 @@ def start_task():
                         
             t1 = datetime.datetime.now()
             #Put task list
-            for flight_id in flight_list:
+            for qtask in task_list:
                 d = dict()
                 d['cmd']='continue'
-                d['data'] = flight_id
+                d['data'] = qtask.req_url
                 d['date'] = t1.strftime('%Y-%m-%d')
+                d['from'] = qtask.from_city_id
+                d['to'] = qtask.to_city_id
                 task_q.put(d)
                 i +=1
     
@@ -126,7 +134,7 @@ def start_task():
                         
         wkm.stop_workers()
         wkm.stop_monitor()
-        mydb.disconnectDB()
+#         mydb.disconnectDB()
         result_p.terminate()
 
 def wait_tasks_finished(result_q, total_task_num):

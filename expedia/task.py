@@ -75,7 +75,7 @@ def get_today_tasks(machine_name):
         from_city_item = fdb.get_city_from_id(from_city_id)
         to_city_item = fdb.get_city_from_id(to_city_id)
         
-        for offset_days in range(1,121):
+        for offset_days in range(1,181):
             start_date = date.today()+timedelta(days=offset_days)
             #oneway flight trip
             task_url = create_one_task_url(from_city_item,to_city_item,'oneway',start_date,start_date)
