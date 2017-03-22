@@ -230,7 +230,7 @@ class FlightPlanDatabase():
         
         return req_url
 
-    def add_into_flight_price_tbl(self, flight_info):
+    def add_into_flight_price_tbl(self, table_name,start_date,stay_days,trip,search_date,flight_info):
         """
         Insert one result for flight price into flight_price table
         """
@@ -239,25 +239,44 @@ class FlightPlanDatabase():
 #         print('company --- %s' %flight_info['company'])
         try:
         
-            cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s)''',(flight_info['company'],))
+            cur.execute('''SELECT * FROM get_airline_company_id_by_name(%s);''',(flight_info['company'],))
             
             
             company_tuple=cur.fetchone()
             company_id=company_tuple[0]
             
-            cur.execute('''INSERT INTO flight_price 
-                           (flight_id,price,company_id,departure_time,arrival_time,duration,span_days,stop,stop_info,search_date)
-                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);''',
-                            (flight_info['id'],
-                             flight_info['price'],
-                             company_id,
-                             flight_info['dep_time'],
-                             flight_info['arr_time'],
-                             flight_info['duration'],
-                             flight_info['span_days'],
-                             flight_info['stop'],
-                             flight_info['stop_info'],
-                             flight_info['search_date']))
+            insert_cmd = 'INSERT INTO ' + table_name
+            
+            insert_cmd = insert_cmd + '''(
+            trip,
+            start_date,
+            stay_days,
+            price,
+            company_id,
+            flight_number,
+            departure_time,
+            arrival_time,
+            duration,
+            span_days,
+            stop,
+            stop_info,
+            search_date)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);'''
+            
+            cur.execute(insert_cmd,
+                        (trip,
+                         start_date,
+                         stay_days,
+                         flight_info['price'],
+                         company_id,
+                         flight_info['flight_code'],
+                         flight_info['dep_time'],
+                         flight_info['arr_time'],
+                         flight_info['duration'],
+                         flight_info['span_days'],
+                         flight_info['stop'],
+                         flight_info['stop_info'],
+                         search_date))
             
             self.conn.commit()
         except Exception as e:
@@ -607,6 +626,12 @@ def test_update_fligth_task_status():
         fdb.disconnectDB()
 
 def create_flight_price_tables():
+    """
+    The function will create flight_id1_id2_price tables
+    where id1 is from_city_id and id2 is to_city_id which both
+    comese from route tables.
+    
+    """
     global g_dbname
     global g_user
     global g_host
@@ -615,41 +640,7 @@ def create_flight_price_tables():
 
     connected = False
     
-    from_city_list = []
-    to_city_list = []
-    
-    try:
-        conn = psycopg2.connect(database=g_dbname,
-                                    user=g_user,
-                                    host=g_host,
-                                    port=g_port,
-                                    password = g_pass)    
-        connected = True
-        
-        cur = conn.cursor()
-
-        #Get from_city_list
-        cur.execute('''SELECT * FROM from_city''',)
-
-        while(1):
-            col = cur.fetchone()
-            if col==None:
-                break;
-            else:
-                from_city_list.append(int(col[0]))
-
-        #Get to_city_list
-        cur.execute('''SELECT * FROM to_city''',)
-
-        while(1):
-            col = cur.fetchone()
-            if col==None:
-                break;
-            else:
-                to_city_list.append(int(col[0]))
-
-        table_content ='''(
-id int4 primary key,
+    table_content ='''(
 trip int4 default 1, ---1: oneway ; 2: roundtrip 
 start_date date,
 stay_days int4,
@@ -665,24 +656,40 @@ stop_info text, --- detail stop information
 rate float,
 search_date date --- date to get it
 );
-'''     
-
-        for from_city_id in from_city_list:
-            for to_city_id in to_city_list:
-                if from_city_id == to_city_id:
-                    continue
-                create_table_str = '''create table IF NOT EXISTS flight_{0}_{1}_price'''.format(str(from_city_id),str(to_city_id))
-                print(create_table_str)
-                create_table_str=create_table_str+table_content
-                cur.execute(create_table_str)
-                
-                create_table_str = '''create table IF NOT EXISTS flight_{0}_{1}_price'''.format(str(to_city_id),str(from_city_id))
-                print(create_table_str)
-                create_table_str=create_table_str+table_content
-                cur.execute(create_table_str)
-                
-        cur.close()
+''' 
         
+    try:
+        conn = psycopg2.connect(database=g_dbname,
+                                    user=g_user,
+                                    host=g_host,
+                                    port=g_port,
+                                    password = g_pass)    
+        connected = True
+        
+        cur = conn.cursor()
+
+        #Get from_city_list
+        cur.execute('''SELECT from_city_id, to_city_id FROM route''',)
+   
+        table_name_list = []
+        while(1):
+            col = cur.fetchone()
+            if col==None:
+                break;
+            else:
+                from_city_id = int(col[0])
+                to_city_id = int(col[1])
+                table_name='''flight_{0}_{1}_price'''.format(str(from_city_id),str(to_city_id))
+                table_name_list.append(table_name)
+
+
+        for table_name in table_name_list:
+            create_table_str = '''create table IF NOT EXISTS '''+table_name
+            print(create_table_str)
+            create_table_str=create_table_str+table_content
+            cur.execute(create_table_str)
+
+        cur.close()        
         conn.commit()
         
     except psycopg2.OperationalError:
@@ -694,6 +701,63 @@ search_date date --- date to get it
         if connected == True:
             conn.close()
 
+def drop_flight_price_tables():
+    """
+    The function will drop flight_id1_id2_price tables
+    where id1 is from_city_id and id2 is to_city_id which both
+    comese from route tables.
+    
+    """
+    global g_dbname
+    global g_user
+    global g_host
+    global g_port
+    global g_pass
+
+    connected = False
+    
+    try:
+        conn = psycopg2.connect(database=g_dbname,
+                                    user=g_user,
+                                    host=g_host,
+                                    port=g_port,
+                                    password = g_pass)    
+        connected = True
+        
+        cur = conn.cursor()
+
+        #Get from_city_list
+        cur.execute('''SELECT from_city_id, to_city_id FROM route''',)
+   
+        table_name_list = []
+        while(1):
+            col = cur.fetchone()
+            if col==None:
+                break;
+            else:
+                from_city_id = int(col[0])
+                to_city_id = int(col[1])
+                table_name='''flight_{0}_{1}_price'''.format(str(from_city_id),str(to_city_id))
+                table_name_list.append(table_name)
+
+
+        for table_name in table_name_list:
+            drop_table_str = '''drop table IF EXISTS '''+table_name
+            print(drop_table_str)
+            cur.execute(drop_table_str)
+
+        cur.close()        
+        conn.commit()
+        
+    except psycopg2.OperationalError:
+        print("database -- %s" %g_dbname)
+        print("host -- %s" %g_host)
+        
+    finally:
+        print('goto finally')
+        if connected == True:
+            conn.close()
+            
 def update_route_table():
     global g_dbname
     global g_user
@@ -763,7 +827,7 @@ def update_route_table():
 def main():
     parser =argparse.ArgumentParser()
     
-    parser.add_argument('cmd',help='Command [create,update,test]')
+    parser.add_argument('cmd',help='Command [create,update,drop,test]')
     parser.add_argument('--table',help='Table to be created[price,route]')
     
     args = parser.parse_args()
@@ -784,6 +848,9 @@ def main():
     if cmd_ind == 'update':
         if table_name == 'route':
             update_route_table()
+    if cmd_ind == 'drop':
+        if table_name == 'price':
+            drop_flight_price_tables()            
     elif cmd_ind == 'test':
         test_update_fligth_task_status()
 #     create_today_flight_schedule()

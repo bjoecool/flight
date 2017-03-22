@@ -98,7 +98,7 @@ search_date date --- date to get it
 );
 
 
-CREATE TABLE flight_task_status(
+CREATE TABLE if not exists flight_task_status(
 total_tasks int,
 success_tasks int,
 total_records int,
@@ -109,15 +109,15 @@ execute_date date primary key
 );
 
 
-CREATE TABLE from_city(
+CREATE TABLE if not exists from_city(
 city_id int4 primary key -- references city(id)
 );
 
-CREATE TABLE to_city(
+CREATE TABLE if not exists to_city(
 city_id int4 primary key -- references city(id)
 );
 
-CREATE TABLE route(
+CREATE TABLE if not exists route(
 id int4 primary key,
 machine varchar,    --- machine name which is used to take this route to translate into a query task
 from_city_id int4,
@@ -126,8 +126,7 @@ from_city_name varchar,
 to_city_name varchar);
 
 
-CREATE TABLE from_to_price(
-id int4 primary key,
+CREATE TABLE if not exists flight_from_to_price(
 trip int4 default 1, ---1: oneway ; 2: roundtrip 
 start_date date,
 stay_days int4,

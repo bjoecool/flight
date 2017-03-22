@@ -24,6 +24,7 @@ import url
 import db
 # import selenium
 import recorder
+import subprocess
 import cr as crawler_worker
 
 # from selenium import webdriver
@@ -36,9 +37,37 @@ import cr as crawler_worker
 from recorder import Recorder
 
 worker_name=["worker_0"]
+g_store_dir="results"
 
 worker_logger=None
 
+def create_tmp_result_file_name(task_id, store_dir):
+    file_name = None
+    
+    t1 = datetime.datetime.now()
+    t1 = t1.strftime('%Y%m%d')
+    
+    file_name = "res_"+t1+"_"+str(task_id)+"._xt"
+    file_name = store_dir+'/'+ file_name
+    
+    return file_name
+
+def finalize_tmp_result_file_name(tmp_file_name,success=1):
+    if tmp_file_name == None:
+        return
+    
+    if success == 1:
+        finalname = tmp_file_name.split('.')[0]+'.txt'
+    else:
+        finalname = tmp_file_name.split('.')[0]+'.err'
+    
+    try:
+        retcode = subprocess.call("mv "+tmp_file_name+" "+finalname, shell=True)
+        if retcode<0:
+            print("Child was terminated by signal",retcode, file=sys.stderr)
+    except OSError as e:
+        print("Execution failed:", e, file=sys.stderr)
+        
 def execTask(task_q,result_q, stat_q,num,driver):
     """
     Execute task coming from the task_q squeue.
@@ -51,6 +80,7 @@ def execTask(task_q,result_q, stat_q,num,driver):
     """
     global worker_name
     global worker_logger
+    global g_store_dir
     
     worker_name = "[worker_"+str(num)+"]"
     worker_logger= logging.getLogger('[Worker]')
@@ -72,22 +102,80 @@ def execTask(task_q,result_q, stat_q,num,driver):
                 break
             
             t1 = datetime.datetime.now()
-            flight_id = d['data']
+            req_url = d['data']
+            task_id = d['task_id']
+            from_city_id = d['from_city_id']
+            to_city_id = d['to_city_id']
             search_date=d['date']
+            start_date = d['start_date']
+            stay_days = d['stay_days']
+            trip = d['trip']
 #             worker_logger.info("%s Start handle task with flight id %d" %(worker_name,flight_id))
             
-            result_q.put(flight_id)
+            result_q.put(task_id)
             
-            req_url = mydb.get_flight_url_by_id(flight_id)
-            mydb.update_status_in_flight_price_query_task_tbl(flight_id,1,search_date)
+#             req_url = mydb.get_flight_url_by_id(flight_id)
+#             mydb.update_status_in_flight_price_query_task_tbl(flight_id,1,search_date)
             
             worker_logger.info("%s send url : %s\n" %(worker_name,req_url))
             
-            crawler_worker.request_one_flight_by_url(flight_id,req_url)
+            # wj add for debug
+            ret = None
+            time.sleep(1)
+            ret = crawler_worker.request_one_flight_by_url(task_id,req_url)
+            
+            file_name = create_tmp_result_file_name(task_id,g_store_dir)
+            
+            with open(file_name,'wb') as f:
+                tid="<task_id>"+str(task_id)
+                f.write(tid.encode())
+                f.write(b'\n')
+                
+                #Write the url
+                url = "<url>"+req_url
+                f.write(url.encode())
+                f.write(b'\n')
+                
+                #Write the search date
+#                     t = datetime.datetime.now().strftime("%Y-%m-%d")
+                search_date = "<search_date>"+datetime.date.today().isoformat()
+                f.write(search_date.encode())
+                f.write(b'\n')
+                
+                table_name = "<table_name>"+"flight_{0}_{1}_price".format(str(from_city_id),str(to_city_id))
+                f.write(table_name.encode())
+                f.write(b'\n')
+
+                start_date_str = "<start_date>"+start_date
+                f.write(start_date_str.encode())
+                f.write(b'\n')
+
+                stay_days_str = "<stay_days>"+str(stay_days)
+                f.write(stay_days_str.encode())
+                f.write(b'\n')                
+
+                trip_str = "<trip>"+str(trip)
+                f.write(trip_str.encode())
+                f.write(b'\n')  
+                                        
+                #Write the worker number
+                f.write(b"<flight_info>")
+                
+                success_flag=1
+                if ret is None or ret.content is None or len(ret.content)==0:
+                    f.write(b'None')
+                    success_flag = 0
+                else:
+                    f.write(ret.content)
+                
+                time.sleep(1)
+                
+                finalize_tmp_result_file_name(file_name,success_flag)
+                  
             
             t2 = datetime.datetime.now()
             tx = t2-t1
-            worker_logger.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,flight_id, tx.seconds))
+            worker_logger.info("%s End handle task flight id %d with time [%s] seconds" %(worker_name,task_id, tx.seconds))
             
             stat_q.put(num)
     finally:

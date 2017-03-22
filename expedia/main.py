@@ -18,6 +18,7 @@
 
 import sys
 import os
+import argparse
 import time
 import db
 import worker
@@ -34,7 +35,10 @@ import task
 
 main_logger=None
 g_worker_num = 4
-g_max_task_num = 5400
+g_max_task_num = 2
+g_machine_name = 'machine1'
+g_result_module = True
+g_debug = False
 
 process_name='[main]'
 
@@ -44,6 +48,7 @@ def start_task():
     global g_worker_num
     global main_logger
     global g_max_task_num
+    global g_machine_name
     
     main_logger.info("Enter the start_task function")
     
@@ -52,7 +57,7 @@ def start_task():
     # create today's flight schedule and task
     db.init_conf()
     
-    task_list = task.get_today_tasks()
+    task_list = task.get_today_tasks(g_machine_name)
     
 #     db.create_today_flight_schedule()
 #     mydb = db.FlightPlanDatabase()
@@ -69,8 +74,9 @@ def start_task():
     i = 0
     total_tasks = 0
     
-    result_p = start_handle_result_process()
-    result_p.start()
+    if g_result_module == True:
+        result_p = start_handle_result_process()
+        result_p.start()
 
     wkm = worker.WorkerMonitor()
     
@@ -86,7 +92,9 @@ def start_task():
             if num_tasks == 0:
                 break
             
-            total_tasks += num_tasks 
+            if num_tasks > g_max_task_num:
+                num_tasks = g_max_task_num
+#             total_tasks += num_tasks 
             
             main_logger.info("Starting workers")
             wkm.start_workers(g_worker_num)
@@ -96,17 +104,26 @@ def start_task():
                         
             t1 = datetime.datetime.now()
             #Put task list
+            task_id=1
             for qtask in task_list:
                 d = dict()
                 d['cmd']='continue'
+                d['task_id']=task_id
+                task_id = task_id + 1
                 d['data'] = qtask.req_url
                 d['date'] = t1.strftime('%Y-%m-%d')
-                d['from'] = qtask.from_city_id
-                d['to'] = qtask.to_city_id
+                d['from_city_id'] = qtask.from_city_id
+                d['to_city_id'] = qtask.to_city_id
+                d['start_date'] = qtask.start_date
+                d['stay_days'] = qtask.stay_days
+                d['trip'] = qtask.trip
                 task_q.put(d)
                 i +=1
+                
+                if task_id >num_tasks:
+                    break
     
-            main_logger.info("%s Put total %d task into queue" %(process_name,num_tasks))
+            main_logger.info("%s Put total %d task into queue" %(process_name,task_id-1))
             
             wait_tasks_finished(result_q, num_tasks)
             
@@ -116,7 +133,7 @@ def start_task():
     except Exception as err:
         main_logger.info("%s In start_task error happened: %s" %str(err))
     finally:
-        main_logger.info("%s Total tasks %d has been executed" %(process_name,total_tasks))
+        main_logger.info("%s Total tasks %d has been executed" %(process_name,num_tasks))
         
         time.sleep(10)
         
@@ -135,18 +152,28 @@ def start_task():
         wkm.stop_workers()
         wkm.stop_monitor()
 #         mydb.disconnectDB()
-        result_p.terminate()
+        if g_result_module == True:
+            result_p.terminate()
 
 def wait_tasks_finished(result_q, total_task_num):
-    task_num = 0
+    global g_debug
+    
+    finished_task_num = 0
     while(1):
         if result_q.empty() == True:
             time.sleep(5)
             continue
         num = result_q.get()
-        task_num = task_num+1
-        if task_num>=total_task_num:
+        
+        finished_task_num = finished_task_num+1
+        
+        if g_debug != False:
+            print("total_task_num(%d) ---------- finished_task_num(%d)" %(total_task_num,finished_task_num))
+        
+        if finished_task_num>=total_task_num:
             break
+        
+    return finished_task_num
 
 def start_handle_result_process():
     main_logger.info('Invoking the result.schedule_results_analyze function')
@@ -216,39 +243,6 @@ def close_log():
     
     logger_handle.close()
         
-def main():
-    global main_logger
-    
-    print("Start the main function")
-
-#     os.chdir('/db/github/flight/expedia')
-        
-#     display = Display(visible=0, size=(1024,768))
-#     display.start()
-
-    t1 = datetime.datetime.now()
-    
-    init_configure()
-    
-    main_logger = init_log()
-    result.init_log()
-    main_logger.info("\n\n*************************************Start the main function*************************************\n")
-    
-    start_task()
-       
-    t2 = datetime.datetime.now()
-    tx = t2-t1
-    
-    end_task(t1,t2)
-    
-    main_logger.info("Total cost time is %d seconds" %tx.seconds)
-
-    main_logger.info("\n*************************************Exit the main function*************************************\n")
-    
-#     display.stop()
-    
-    print("Exit the main function")
-
 def end_task(t1,t2):
     global  g_worker_num
     
@@ -274,5 +268,52 @@ def print_time():
     s1=datetime.datetime.now()
     s1 = s1.strftime('%Y-%m-%d %H:%M:%S')
     print(s1)
+    
+def main():
+    global main_logger
+    global g_result_module
+    global g_debug
+    
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--resultmodule',default='True',help='Whether start the result module [True,False]')
+    parser.add_argument('--debug',default='False',help='Whether start debug model [True,False]')
+    
+    args = parser.parse_args()
+    
+    
+    g_result_module = args.resultmodule 
+    g_debug = args.debug
+    
+    print("Start the main function")
+
+#     os.chdir('/db/github/flight/expedia')
+        
+#     display = Display(visible=0, size=(1024,768))
+#     display.start()
+
+    t1 = datetime.datetime.now()
+    
+    init_configure()
+    
+    main_logger = init_log()
+    result.init_log()
+    main_logger.info("\n\n*************************************Start the main function*************************************\n")
+    
+    start_task()
+       
+    t2 = datetime.datetime.now()
+    tx = t2-t1
+    
+#     end_task(t1,t2)
+    
+    main_logger.info("Total cost time is %d seconds" %tx.seconds)
+
+    main_logger.info("\n*************************************Exit the main function*************************************\n")
+    
+#     display.stop()
+    
+    print("Exit the main function")
+    
 if __name__=='__main__':
     main()

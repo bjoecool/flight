@@ -55,16 +55,16 @@ def print_flight_list(fdb, flight_id,search_date,flight_list):
     
     print('\n\n')
                 
-def update_flight_list_into_db(fdb, flight_id,search_date,flight_list,value):
+def update_flight_list_into_db(fdb, table_name,start_date,stay_days,trip,flight_list,value):
     if flight_id == None or search_date == None:
         return
     
     flight_list_len = len(flight_list)
     if flight_list_len > 0:
-        fdb.update_status_in_flight_price_query_task_tbl(flight_id, value, search_date)
+#         fdb.update_status_in_flight_price_query_task_tbl(flight_id, value, search_date)
 
         for flight_info in flight_list:
-            fdb.add_into_flight_price_tbl(flight_info)
+            fdb.add_into_flight_price_tbl(table_name,flight_info)
     else:
         fdb.update_status_in_flight_price_query_task_tbl(flight_id, 0, search_date)
   
@@ -308,7 +308,47 @@ def analyze_one_file(filename):
     finally:
         return ret,flight_id,search_date,flight_list
 
-def analyze_results_to_db(dir_name='results'):
+def print_flight_info_dict(flight_info_dict):
+    ret_dict = flight_info_dict
+    task_id = ret_dict['task_id']
+    search_date = ret_dict['search_date']
+    table_name = ret_dict['table_name']
+    start_date = ret_dict['start_date']
+    stay_days = ret_dict['stay_days']
+    trip = ret_dict['trip']
+    flight_list = ret_dict['flight_list']
+    
+    for flight_info in flight_list:
+        price = flight_info['price']
+        company_name = flight_info["company"]
+        dep_time = flight_info['dep_time']
+        arr_time = flight_info['arr_time']
+        duration = flight_info['duration']
+        span_days = flight_info['span_days']
+        stop = flight_info['stop']
+        stop_info = flight_info['stop_info']
+        flight_code = flight_info["flight_code"]
+        plane = flight_info["plane"]
+
+        
+        print('''[table_name]:''',table_name)
+        print('''[task_id]:''',task_id)
+        print('''[start_date]:''',start_date)
+        print('''[stay_days]:''',stay_days)
+        print('''[trip]:''',trip)
+        print('''[price]:''',price)
+        print('''[company_name]:''',company_name)
+        print('''[dep_time]:''',dep_time)
+        print('''[arr_time]:''',arr_time)
+        print('''[duration]:''',duration)
+        print('''[span_days]:''',span_days)
+        print('''[stop]:''',stop)
+        print('''[stop_info]:''',stop_info)
+        print('''[flight_code]:''',flight_code)
+        print('''[plane]:''',plane)
+        print('')
+        
+def analyze_results_to_db(dir_name='results',test_flag=False):
     """
     Analyze the result files stored in the dir directory.
     Store the results in the database.
@@ -321,17 +361,34 @@ def analyze_results_to_db(dir_name='results'):
     fdb.connectDB()
     try:
         for f in file_list:
-#             print(f)
-            ret, flight_id,search_date,flight_list = pa.parse_one_file(f)
+            ret, ret_dict = pa.parse_one_file(f)
+            if test_flag == True:
+                print_flight_info_dict(ret_dict)
+                continue
+            
             if ret==True:
-                update_flight_list_into_db(fdb,flight_id,search_date,flight_list,2)
-                logger.info("%s [%s] --- result number %d" %(f, flight_id,len(flight_list)))
+                task_id = ret_dict['task_id']
+                search_date = ret_dict['search_date']
+                table_name = ret_dict['table_name']
+                start_date = ret_dict['start_date']
+                stay_days = ret_dict['stay_days']
+                trip = ret_dict['trip']
+                flight_list = ret_dict['flight_list']
+                
+#                 update_flight_list_into_db(fdb,flight_id,search_date,flight_list,2)
+                
+                flight_list_len = len(flight_list)
+                if flight_list_len > 0:
+            #         fdb.update_status_in_flight_price_query_task_tbl(flight_id, value, search_date)
+                    for flight_info in flight_list:
+                        fdb.add_into_flight_price_tbl(table_name,start_date,stay_days,trip,search_date,flight_info)
+                logger.info("%s [%s] --- result number %d" %(f, task_id,flight_list_len))
+                print("%s [%s] --- result number %d" %(f, task_id,flight_list_len))
             else:
-                update_flight_list_into_db(fdb,flight_id,search_date,[],0)
                 logger.error("Error happened in analyzing %s" %(f))
                 
-            cmd="rm -rf "+f
-            os.system(cmd)
+#             cmd="rm -rf "+f
+#             os.system(cmd)
     finally:
         fdb.disconnectDB()
 
@@ -384,7 +441,7 @@ def main():
 
     init_log()
     
-    analyze_results_to_db()
+    analyze_results_to_db(dir_name='results',test_flag=True)
 #     schedule_results_analyze()
 #     t1()
     

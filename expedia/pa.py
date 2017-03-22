@@ -52,6 +52,8 @@ def parse_timeline_array(timeline_list):
                 carrier = dict()
                 carrier["airline_code"] = t["carrier"]["airlineCode"]
                 carrier["airline_name"] = t["carrier"]["airlineName"]
+                carrier["flight_number"] = t["carrier"]["flightNumber"]
+                carrier["plane"] = t["carrier"]["plane"]
                 carriers.append(carrier)
             else:
                 code=t["airport"]["code"]
@@ -110,13 +112,18 @@ def parse_one_leg_obj(obj):
         ### Only get the first name because the database only support one now,
         ### Later consider support multiple company name
         for carrier in timeline_info["carriers"]:
-            company = carrier["airline_name"]
+            flight_number = carrier["flight_number"]
+            airline_code = carrier["airline_code"] 
+            flight_info['flight_code'] = airline_code+ flight_number
+            flight_info['airline_code'] = carrier["airline_code"]
+            flight_info['flight_number'] = flight_number
+            flight_info["company"] = carrier["airline_name"] 
+            flight_info["plane"] = carrier["plane"] 
+            break
 #             if company == None:
 #                 company = carrier["airline_name"]
 #             else:
 #                 company = company+";"+carrier["airline_name"]
-        
-        flight_info["company"] = company 
         
     except Exception as inst:
         print("Error happened in parse_one_leg_obj", inst)
@@ -132,13 +139,28 @@ def parse_one_file(file_name):
     flight_id = None
     search_date = None
     
+    ret_dict={}
     try:    
         with open(file_name) as f:
             for line in f.readlines():
-                if line[0:11]=='<flight_id>':
-                    flight_id = line[11:].strip()
+                if line[0:9]=='<task_id>':
+                    task_id = line[9:].strip()
+                    ret_dict['task_id']=task_id
                 elif line[0:13] == '<search_date>':
                     search_date = line[13:].strip()
+                    ret_dict['search_date']=search_date
+                elif line[0:12] == '<table_name>':
+                    table_name = line[12:].strip()
+                    ret_dict['table_name']=table_name
+                elif line[0:12] == '<start_date>':
+                    start_date = line[12:].strip()
+                    ret_dict['start_date']=start_date
+                elif line[0:11] == '<stay_days>':
+                    stay_days = line[11:].strip()
+                    ret_dict['stay_days']=stay_days
+                elif line[0:6] == '<trip>':
+                    trip = line[6:].strip()
+                    ret_dict['trip']=trip
                 elif line[0:13] == '<flight_info>':
                     content_line = line[13:].strip()
                     s1 = json.loads(content_line)
@@ -149,13 +171,15 @@ def parse_one_file(file_name):
                         flight_info['id']=flight_id
                         flight_info['search_date'] = search_date
                         flight_list.append(flight_info)
+                        ret_dict['flight_list']=flight_list
                         ret = True
 
     except FileNotFoundError as err:
         print("File not found for %s" %file_name)
         flight_list = None
+        ret_dict['flight_list']=flight_list
     finally:
-        return ret,flight_id,search_date,flight_list
+        return ret,ret_dict
 
 # def test(file_name):
 #     flight_list=[]

@@ -118,7 +118,7 @@ def create_result_file_name(flight_id):
     
     return file_name
             
-def request_one_flight_by_url(flight_id,url,store_dir="results"):
+def request_one_flight_by_url(task_id,url,store_dir="results"):
     """
     This is the function to send URL to EXPEDIA and get the flight price for
     this url.
@@ -127,16 +127,14 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
     global request_time_out
     retry_number = 0
     
-    file_name = create_tmp_result_file_name(flight_id,store_dir)
+#     file_name = create_tmp_result_file_name(flight_id,store_dir)
     
     error_logger= logging.getLogger('[Worker]')
      
-    if file_name == None:
-        print("create_result_file_name return NULL")
-        return
+#     if file_name == None:
+#         print("create_result_file_name return NULL")
+#         return
      
-    flight_id = str(flight_id)
-    
     while(retry_number<3):
         try:
             r = requests.get(url,proxies=proxies, timeout=request_time_out)
@@ -165,7 +163,7 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
     
     while(retry_number<3):
         try:
-            r = requests.get(json_url,proxies=proxies, timeout=request_time_out)
+            ret = requests.get(json_url,proxies=proxies, timeout=request_time_out)
         except requests.exceptions.Timeout:
             error_logger.error("requests timeout [%d] for %s" %(retry_number,url))
             retry_number = retry_number+1
@@ -177,39 +175,11 @@ def request_one_flight_by_url(flight_id,url,store_dir="results"):
             error_logger.error('''Error happened when request {0} , error is {1}'''.format(json_url,err))
             return
     
-        if r.status_code==200:
-            break
+        if ret.status_code==200:
+            return ret
+        
+    return None
     
-    if r.status_code==200:
-        with open(file_name,'wb') as f:
-            flight_id="<flight_id>"+flight_id
-            f.write(flight_id.encode())
-            f.write(b'\n')
-            
-            #Write the url
-            url = "<url>"+url
-            f.write(url.encode())
-            f.write(b'\n')
-            
-            #Write the search date
-            t = datetime.now().strftime("%Y-%m-%d")
-            search_date = "<search_date>"+t
-            f.write(search_date.encode())
-            f.write(b'\n')
-    
-            #Write the worker number
-            f.write(b"<flight_info>")
-            
-            ret = r.content
-            f.write(ret)
-            
-            time.sleep(1)
-            
-            finalize_tmp_result_file_name(file_name)
-          
-    else:
-        print("Get %d code for json_url:%s" %(r.status_code,json_url))    
-
 def reuqest_one_flight(departure_date):
     """
     departure_date is a datetime.date 
