@@ -386,8 +386,8 @@ def analyze_results_to_db(dir_name='results',print_flag=False):
             else:
                 logger.error("Error happened in analyzing %s" %(f))
                 
-#             cmd="rm -rf "+f
-#             os.system(cmd)
+            cmd="rm -rf "+f
+            os.system(cmd)
     finally:
         fdb.disconnectDB()
 

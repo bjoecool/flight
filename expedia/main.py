@@ -49,6 +49,7 @@ def start_task():
     global main_logger
     global g_max_task_num
     global g_machine_name
+    global g_result_module
     
     main_logger.info("Enter the start_task function")
     
@@ -74,7 +75,7 @@ def start_task():
     i = 0
     total_tasks = 0
     
-    if g_result_module == True:
+    if g_result_module == True or g_result_module=='True':
         result_p = start_handle_result_process()
         result_p.start()
 
@@ -152,7 +153,7 @@ def start_task():
         wkm.stop_workers()
         wkm.stop_monitor()
 #         mydb.disconnectDB()
-        if g_result_module == True:
+        if g_result_module == True or g_result_module=='True':
             result_p.terminate()
 
 def wait_tasks_finished(result_q, total_task_num):
@@ -176,8 +177,9 @@ def wait_tasks_finished(result_q, total_task_num):
     return finished_task_num
 
 def start_handle_result_process():
-    main_logger.info('Invoking the result.schedule_results_analyze function')
+    main_logger.info('Started result handle process')
     p = mp.Process(target=result.schedule_results_analyze, args=('results',20))
+    print("Started result handle process")
     
     return p
     
