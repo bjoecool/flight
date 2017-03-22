@@ -18,7 +18,7 @@
 
 import os
 import sys
-
+import argparse
 import time
 import datetime
 import logging
@@ -348,7 +348,7 @@ def print_flight_info_dict(flight_info_dict):
         print('''[plane]:''',plane)
         print('')
         
-def analyze_results_to_db(dir_name='results',test_flag=False):
+def analyze_results_to_db(dir_name='results',print_flag=False):
     """
     Analyze the result files stored in the dir directory.
     Store the results in the database.
@@ -356,13 +356,12 @@ def analyze_results_to_db(dir_name='results',test_flag=False):
     global logger
     
     file_list = get_all_files(dir_name)
-    
     fdb = db.FlightPlanDatabase()
     fdb.connectDB()
     try:
         for f in file_list:
             ret, ret_dict = pa.parse_one_file(f)
-            if test_flag == True:
+            if print_flag == True:
                 print_flight_info_dict(ret_dict)
                 continue
             
@@ -399,6 +398,8 @@ def schedule_results_analyze(dir_name='results', interval_time=10):
     interval_time --- how many seconds the function start a task
     """
     global logger
+    
+    db.init_conf()
     
     logger.info("Start schedule_results_analyze")
     try:
@@ -438,10 +439,22 @@ def init_log():
     logger_handle.close()
                 
 def main():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('cmd',help='Command [print,insertdb]')
+    
+    args = parser.parse_args()
+    
+    cmd_ind = args.cmd
 
     init_log()
-    
-    analyze_results_to_db(dir_name='results',test_flag=True)
+    db.init_conf()
+        
+    if cmd_ind == 'print':
+        analyze_results_to_db(dir_name='results',print_flag=True)
+    elif cmd_ind == 'insertdb':
+        analyze_results_to_db(dir_name='results',print_flag=False)
+        
 #     schedule_results_analyze()
 #     t1()
     

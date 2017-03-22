@@ -840,7 +840,7 @@ def main():
         quit(0)
      
     init_log()
-#     init_conf()
+    init_conf()
     
     if cmd_ind == 'create':
         if table_name == 'price':

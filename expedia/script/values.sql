@@ -52,6 +52,9 @@ insert into from_city values(6);
 insert into from_city values(7);
 insert into from_city values(8);
 insert into from_city values(9);
+
+---- not do it now
+
 insert into from_city values(10);
 insert into from_city values(11);
 insert into from_city values(12);
@@ -63,6 +66,9 @@ insert into to_city values(1);
 insert into to_city values(2);
 insert into to_city values(3);
 insert into to_city values(4);
+
+
+---- not do it now
 insert into to_city values(9);
 insert into to_city values(14);
 insert into to_city values(15);

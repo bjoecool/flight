@@ -35,7 +35,7 @@ import task
 
 main_logger=None
 g_worker_num = 4
-g_max_task_num = 2
+g_max_task_num = 10
 g_machine_name = 'machine1'
 g_result_module = True
 g_debug = False
