@@ -126,7 +126,11 @@ def start_task():
     
             main_logger.info("%s Put total %d task into queue" %(process_name,task_id-1))
             
+            t1 = datetime.datetime.now()
             wait_tasks_finished(result_q, num_tasks)
+            t2 = datetime.datetime.now()
+            tx = t2-t1
+            main_logger.info("Handle %d tasks using %d seconds" %(num_tasks,tx.seconds))            
             
             time.sleep(10)
             

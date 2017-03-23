@@ -382,7 +382,7 @@ def analyze_results_to_db(dir_name='results',print_flag=False):
                     for flight_info in flight_list:
                         fdb.add_into_flight_price_tbl(table_name,start_date,stay_days,trip,search_date,flight_info)
                 logger.info("%s [%s] --- result number %d" %(f, task_id,flight_list_len))
-                print("%s [%s] --- result number %d" %(f, task_id,flight_list_len))
+                #print("%s [%s] --- result number %d" %(f, task_id,flight_list_len))
             else:
                 logger.error("Error happened in analyzing %s" %(f))
                 
