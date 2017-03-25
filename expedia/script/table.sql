@@ -22,6 +22,7 @@ CREATE SEQUENCE airline_company_id START 1;
 CREATE SEQUENCE flight_id START 1;
 CREATE SEQUENCE city_id START 1;
 CREATE SEQUENCE route_id START 1;
+CREATE SEQUENCE flight_from_to_price_id START 1;
 
 ------------------------------------------------
 ---- CREATE TABLES
@@ -123,10 +124,12 @@ machine varchar,    --- machine name which is used to take this route to transla
 from_city_id int4,
 to_city_id int4,
 from_city_name varchar,
-to_city_name varchar);
+to_city_name varchar,
+table_name text);
 
 
 CREATE TABLE if not exists flight_from_to_price(
+id int4 primary key default nextval('flight_from_to_price_id'::regclass),
 trip int4 default 1, ---1: oneway ; 2: roundtrip 
 start_date date,
 stay_days int4,
@@ -142,3 +145,5 @@ stop_info text, --- detail stop information
 rate float,
 search_date date --- date to get it
 );
+
+ALTER TABLE 

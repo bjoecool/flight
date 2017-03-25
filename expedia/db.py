@@ -641,6 +641,7 @@ def create_flight_price_tables():
     connected = False
     
     table_content ='''(
+id int4 primary key default nextval('{0}'),
 trip int4 default 1, ---1: oneway ; 2: roundtrip 
 start_date date,
 stay_days int4,
@@ -684,11 +685,13 @@ search_date date --- date to get it
 
 
         for table_name in table_name_list:
+            seq_name = table_name+'_id'
+            create_seq_str = 'CREATE SEQUENCE IF NOT EXISTS '+seq_name+' START 1;'
+            cur.execute(create_seq_str)
             create_table_str = '''create table IF NOT EXISTS '''+table_name
             print(create_table_str)
-            create_table_str=create_table_str+table_content
+            create_table_str=create_table_str+table_content.format(seq_name)
             cur.execute(create_table_str)
-
         cur.close()        
         conn.commit()
         
@@ -804,11 +807,13 @@ def update_route_table():
             for to_city_id in to_city_list:
                 if from_city_id == to_city_id:
                     continue
-                insert_cmd = '''insert into route values(nextval('route_id'),'machine1',{0},{1},get_city_name({2}),get_city_name({3}));'''.format(str(from_city_id),str(to_city_id),str(from_city_id),str(to_city_id))
+                table_name='flight_{0}_{1}_price'.format(str(from_city_id),str(to_city_id))
+                insert_cmd = '''insert into route values(nextval('route_id'),'machine1',{0},{1},get_city_name({2}),get_city_name({3}),'{4}');'''.format(str(from_city_id),str(to_city_id),str(from_city_id),str(to_city_id),table_name)
                 print(insert_cmd)
                 cur.execute(insert_cmd)
                 
-                insert_cmd = '''insert into route values(nextval('route_id'),'machine1',{0},{1},get_city_name({2}),get_city_name({3}));'''.format(str(to_city_id),str(from_city_id),str(to_city_id),str(from_city_id))
+                table_name='flight_{0}_{1}_price'.format(str(to_city_id),str(from_city_id))
+                insert_cmd = '''insert into route values(nextval('route_id'),'machine1',{0},{1},get_city_name({2}),get_city_name({3}),'{4}');'''.format(str(to_city_id),str(from_city_id),str(to_city_id),str(from_city_id),table_name)
                 print(insert_cmd)
                 cur.execute(insert_cmd)
                 
