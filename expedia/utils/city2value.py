@@ -5,7 +5,7 @@ import re
 
 def convert_city_names(filename):
     with open(filename) as f:
-        id_num=10
+        id_num=1
         for line in f.readlines():
             line = line.strip()
             if len(line)==0:

@@ -146,18 +146,18 @@ def request_one_flight_by_url(task_id,url,store_dir="results"):
             retry_number = retry_number+1
             if retry_number>=3:
                 error_logger.error("request %s has time out for max times[%d]" %(url,retry_number))
-                return
+                return None
             continue
         except Exception as err:
             error_logger.error('''Error happened when request {0} , error is {1}'''.format(url,err))
-            return
+            return None
        
     
     json_url = get_json_url(r.content)
     
     if json_url == None:
         error_logger.error("Failed get json_url for url[%s]" %url)
-        return
+        return None
 
     retry_number = 0
     
@@ -169,11 +169,11 @@ def request_one_flight_by_url(task_id,url,store_dir="results"):
             retry_number = retry_number+1
             if retry_number>=3:
                 error_logger.error("request url %s has time out for max times[%d]" %(retry_number,json_url))
-                return
+                return None
             continue
         except Exception as err:
             error_logger.error('''Error happened when request {0} , error is {1}'''.format(json_url,err))
-            return
+            return None
     
         if ret.status_code==200:
             return ret

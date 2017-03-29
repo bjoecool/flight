@@ -45,6 +45,10 @@ insert into city values(37,'Venice','VCE','Venice, Italy (VCE-All Airports)');
 insert into city values(38,'Florence','FLR','Florence, Italy (FLR-Peretola)');
 insert into city values(39,'Milan','MIL','Milan, Italy (MIL-All Airports)');
 insert into city values(40,'Auckland','AKL','Auckland, New Zealand (AKL-Auckland Intl.)');
+insert into city values(41,'Gold Coast','OOL','Gold Coast, QLD, Australia (OOL-Coolangatta)');
+insert into city values(42,'Denpasar','DPS','Denpasar, Indonesia (DPS-Ngurah Rai Intl.)');
+insert into city values(43,'Male','MLE','Male, Maldives (MLE-Male Intl.)');
+insert into city values(44,'Toronto','YTO','Toronto, ON, Canada (YTO-All Airports)');
 
 ---- from_city values
 insert into from_city values(5);
